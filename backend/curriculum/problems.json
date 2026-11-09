@@ -1,0 +1,565 @@
+[
+  {
+    "id": "nulls-1",
+    "topicId": "nulls",
+    "title": "1. Bono de Empleados (Employee Bonus)",
+    "difficulty": "Easy",
+    "description": "\nEscribe una consulta SQL para reportar el nombre de cada empleado y el monto de su bono para todos los empleados que tengan un bono **menor a 1000** o **que no tengan ningún bono** (valor `NULL`).\n\n### Tabla: `Employee`\n| Column Name | Type |\n| :--- | :--- |\n| empId | int |\n| name | varchar |\n| supervisor | int |\n| salary | int |\n\n### Tabla: `Bonus`\n| Column Name | Type |\n| :--- | :--- |\n| empId | int |\n| bonus | int |\n\n### Formato de Salida\n| name | bonus |\n| :--- | :--- |\n| Brad | null |\n| John | null |\n| Dan | 500 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Bonus;\nDROP TABLE IF EXISTS Employee;\nCREATE TABLE Employee (empId INT PRIMARY KEY, name VARCHAR(50), supervisor INT, salary INT);\nCREATE TABLE Bonus (empId INT PRIMARY KEY, bonus INT);\n",
+    "seedDML": "\nINSERT INTO Employee VALUES (1, 'John', 3, 1000), (2, 'Dan', 3, 2000), (3, 'Brad', NULL, 4000), (4, 'Thomas', 3, 4000), (5, 'Evelyn', 3, 3000);\nINSERT INTO Bonus VALUES (2, 500), (4, 2000), (5, 1000);\n",
+    "starterCode": "SELECT \nFROM Employee e\nLEFT JOIN Bonus b ON e.empId = b.empId\nWHERE ...;\n",
+    "solutionSQL": "\nSELECT e.name, b.bonus\nFROM Employee e\nLEFT JOIN Bonus b ON e.empId = b.empId\nWHERE b.bonus < 1000 OR b.bonus IS NULL;\n",
+    "expectedColumns": [
+      "name",
+      "bonus"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "nulls-2",
+    "topicId": "nulls",
+    "title": "2. Reconciliación de Nulos con IFNULL",
+    "difficulty": "Medium",
+    "description": "\nReporta todos los empleados con su salario total (`salary + bonus`). Si el empleado no tiene bono, el bono debe considerarse como 0. \nRenombra la columna calculada como `total_payout`.\n\n### Tabla: `Employee`\n| Column Name | Type |\n| :--- | :--- |\n| empId | int |\n| name | varchar |\n| supervisor | int |\n| salary | int |\n\n### Tabla: `Bonus`\n| Column Name | Type |\n| :--- | :--- |\n| empId | int |\n| bonus | int |\n\n### Formato de Salida\n| name | total_payout |\n| :--- | :--- |\n| John | 1000 |\n| Dan | 2500 |\n| Brad | 4000 |\n| Thomas | 6000 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Bonus;\nDROP TABLE IF EXISTS Employee;\nCREATE TABLE Employee (empId INT PRIMARY KEY, name VARCHAR(50), supervisor INT, salary INT);\nCREATE TABLE Bonus (empId INT PRIMARY KEY, bonus INT);\n",
+    "seedDML": "\nINSERT INTO Employee VALUES (1, 'John', 3, 1000), (2, 'Dan', 3, 2000), (3, 'Brad', NULL, 4000), (4, 'Thomas', 3, 4000);\nINSERT INTO Bonus VALUES (2, 500), (4, 2000);\n",
+    "starterCode": "SELECT e.name, ... AS total_payout\nFROM Employee e\nLEFT JOIN Bonus b ON e.empId = b.empId;\n",
+    "solutionSQL": "\nSELECT e.name, e.salary + IFNULL(b.bonus, 0) AS total_payout\nFROM Employee e\nLEFT JOIN Bonus b ON e.empId = b.empId;\n",
+    "expectedColumns": [
+      "name",
+      "total_payout"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "nulls-3",
+    "topicId": "nulls",
+    "title": "3. La Trampa de NOT IN con Nulos (Anti-Join Seguro)",
+    "difficulty": "Medium",
+    "description": "\nTienes una tabla de clientes y una tabla de pedidos. Algunos pedidos tienen `customer_id` nulo (pedidos anónimos).\nEncuentra los nombres de los clientes que **nunca han realizado un pedido**.\n*Ojo: Un `NOT IN` tradicional fallará si la subconsulta contiene nulos. Demuestra cómo resolverlo con `NOT EXISTS` o `LEFT JOIN ... WHERE IS NULL`.*\n\n### Tabla: `Customers`\n| id | name |\n| :--- | :--- |\n| 1 | Joe |\n| 2 | Henry |\n| 3 | Sam |\n| 4 | Max |\n\n### Tabla: `Orders`\n| id | customerId |\n| :--- | :--- |\n| 1 | 3 |\n| 2 | 1 |\n| 3 | NULL |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Orders;\nDROP TABLE IF EXISTS Customers;\nCREATE TABLE Customers (id INT PRIMARY KEY, name VARCHAR(50));\nCREATE TABLE Orders (id INT PRIMARY KEY, customerId INT);\n",
+    "seedDML": "\nINSERT INTO Customers VALUES (1, 'Joe'), (2, 'Henry'), (3, 'Sam'), (4, 'Max');\nINSERT INTO Orders VALUES (1, 3), (2, 1), (3, NULL);\n",
+    "starterCode": "SELECT name AS Customers\nFROM Customers c\nWHERE ...;\n",
+    "solutionSQL": "\nSELECT c.name AS Customers\nFROM Customers c\nWHERE NOT EXISTS (\n    SELECT 1 FROM Orders o WHERE o.customerId = c.id\n);\n",
+    "expectedColumns": [
+      "Customers"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "rounding-1",
+    "topicId": "rounding",
+    "title": "4. Tiempo Promedio por Máquina (ROUND)",
+    "difficulty": "Easy",
+    "description": "\nHay una tabla con logs de máquinas de fábrica. Cada proceso tiene un evento `start` y un evento `end`.\nCalcula el tiempo promedio que le toma a cada máquina completar un proceso.\nEl tiempo debe redondearse a **3 decimales** con el nombre `processing_time`.\n\n### Tabla: `Activity`\n| machine_id | process_id | activity_type | timestamp |\n| :--- | :--- | :--- | :--- |\n| 0 | 0 | start | 0.712 |\n| 0 | 0 | end | 1.520 |\n| 0 | 1 | start | 3.140 |\n| 0 | 1 | end | 4.120 |\n| 1 | 0 | start | 0.550 |\n| 1 | 0 | end | 1.550 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Activity;\nCREATE TABLE Activity (machine_id INT, process_id INT, activity_type VARCHAR(10), timestamp FLOAT);\n",
+    "seedDML": "\nINSERT INTO Activity VALUES \n(0, 0, 'start', 0.712), (0, 0, 'end', 1.520),\n(0, 1, 'start', 3.140), (0, 1, 'end', 4.120),\n(1, 0, 'start', 0.550), (1, 0, 'end', 1.550);\n",
+    "starterCode": "SELECT machine_id, ... AS processing_time\nFROM Activity\nGROUP BY machine_id;\n",
+    "solutionSQL": "\nSELECT \n    a1.machine_id,\n    ROUND(AVG(a2.timestamp - a1.timestamp), 3) AS processing_time\nFROM Activity a1\nJOIN Activity a2 \n  ON a1.machine_id = a2.machine_id \n AND a1.process_id = a2.process_id \n AND a1.activity_type = 'start' \n AND a2.activity_type = 'end'\nGROUP BY a1.machine_id;\n",
+    "expectedColumns": [
+      "machine_id",
+      "processing_time"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "rounding-2",
+    "topicId": "rounding",
+    "title": "5. Tasa de Confirmación (Confirmation Rate)",
+    "difficulty": "Medium",
+    "description": "\nLa tasa de confirmación de un usuario es el número de mensajes `confirmed` dividido por el número total de solicitudes enviadas.\nSi un usuario no envió ninguna solicitud, su tasa de confirmación debe ser `0.00`.\nRedondea el resultado a **2 decimales** con el alias `confirmation_rate`.\n\n### Tabla: `Signups`\n| user_id |\n| :--- |\n| 3 |\n| 7 |\n| 2 |\n\n### Tabla: `Confirmations`\n| user_id | action |\n| :--- | :--- |\n| 3 | timeout |\n| 3 | confirmed |\n| 7 | confirmed |\n| 7 | confirmed |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Confirmations;\nDROP TABLE IF EXISTS Signups;\nCREATE TABLE Signups (user_id INT PRIMARY KEY);\nCREATE TABLE Confirmations (user_id INT, action VARCHAR(20));\n",
+    "seedDML": "\nINSERT INTO Signups VALUES (3), (7), (2);\nINSERT INTO Confirmations VALUES (3, 'timeout'), (3, 'confirmed'), (7, 'confirmed'), (7, 'confirmed');\n",
+    "starterCode": "SELECT s.user_id, ... AS confirmation_rate\nFROM Signups s\nLEFT JOIN Confirmations c ON s.user_id = c.user_id\nGROUP BY s.user_id;\n",
+    "solutionSQL": "\nSELECT \n    s.user_id,\n    ROUND(IFNULL(AVG(c.action = 'confirmed'), 0), 2) AS confirmation_rate\nFROM Signups s\nLEFT JOIN Confirmations c ON s.user_id = c.user_id\nGROUP BY s.user_id;\n",
+    "expectedColumns": [
+      "user_id",
+      "confirmation_rate"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "joins-1",
+    "topicId": "joins",
+    "title": "6. Visitas sin Transacción (Anti-Join con ON AND)",
+    "difficulty": "Easy",
+    "description": "\nEncuentra los IDs de los usuarios que visitaron el centro comercial pero no realizaron ninguna transacción, y el conteo de cuántas veces ocurrió esto.\nNombra las columnas `customer_id` y `count_no_trans`.\n\n### Tabla: `Visits`\n| visit_id | customer_id |\n| :--- | :--- |\n| 1 | 23 |\n| 2 | 9 |\n| 4 | 30 |\n| 5 | 54 |\n\n### Tabla: `Transactions`\n| transaction_id | visit_id | amount |\n| :--- | :--- | :--- |\n| 2 | 5 | 310 |\n| 3 | 5 | 300 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Transactions;\nDROP TABLE IF EXISTS Visits;\nCREATE TABLE Visits (visit_id INT PRIMARY KEY, customer_id INT);\nCREATE TABLE Transactions (transaction_id INT PRIMARY KEY, visit_id INT, amount INT);\n",
+    "seedDML": "\nINSERT INTO Visits VALUES (1, 23), (2, 9), (4, 30), (5, 54);\nINSERT INTO Transactions VALUES (2, 5, 310), (3, 5, 300);\n",
+    "starterCode": "SELECT v.customer_id, COUNT(...) AS count_no_trans\nFROM Visits v\nLEFT JOIN Transactions t ON ...;\n",
+    "solutionSQL": "\nSELECT v.customer_id, COUNT(v.visit_id) AS count_no_trans\nFROM Visits v\nLEFT JOIN Transactions t ON v.visit_id = t.visit_id\nWHERE t.transaction_id IS NULL\nGROUP BY v.customer_id;\n",
+    "expectedColumns": [
+      "customer_id",
+      "count_no_trans"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "joins-2",
+    "topicId": "joins",
+    "title": "7. Triple Join: Clientes, Pedidos y Catálogo",
+    "difficulty": "Medium",
+    "description": "\nCalcula el gasto total realizado por cada cliente sumando `quantity * price`.\nIncluye a todos los clientes registrados, incluso si no han realizado compras (en cuyo caso su gasto total debe ser `0`).\nNombra las columnas `customer_name` y `total_spent`. Ordena por `total_spent` descendente.\n\n### Tabla: `Customers`\n| Column Name | Type |\n| :--- | :--- |\n| id | int |\n| name | varchar |\n\n### Tabla: `Products`\n| Column Name | Type |\n| :--- | :--- |\n| id | int |\n| name | varchar |\n| price | decimal |\n\n### Tabla: `Orders`\n| Column Name | Type |\n| :--- | :--- |\n| id | int |\n| customer_id | int |\n| product_id | int |\n| quantity | int |\n\n### Formato de Salida\n| customer_name | total_spent |\n| :--- | :--- |\n| Alice | 1050.00 |\n| Bob | 25.00 |\n| Charlie | 0.00 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Orders;\nDROP TABLE IF EXISTS Products;\nDROP TABLE IF EXISTS Customers;\nCREATE TABLE Customers (id INT PRIMARY KEY, name VARCHAR(50));\nCREATE TABLE Products (id INT PRIMARY KEY, name VARCHAR(50), price DECIMAL(10,2));\nCREATE TABLE Orders (id INT PRIMARY KEY, customer_id INT, product_id INT, quantity INT);\n",
+    "seedDML": "\nINSERT INTO Customers VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie');\nINSERT INTO Products VALUES (10, 'Laptop', 1000.00), (20, 'Mouse', 25.00);\nINSERT INTO Orders VALUES (1, 1, 10, 1), (2, 1, 20, 2), (3, 2, 20, 1);\n",
+    "starterCode": "SELECT c.name AS customer_name, ...\nFROM Customers c\nLEFT JOIN Orders o ON ...\nLEFT JOIN Products p ON ...\nGROUP BY c.id, c.name\nORDER BY total_spent DESC;\n",
+    "solutionSQL": "\nSELECT \n    c.name AS customer_name,\n    IFNULL(SUM(o.quantity * p.price), 0) AS total_spent\nFROM Customers c\nLEFT JOIN Orders o ON c.id = o.customer_id\nLEFT JOIN Products p ON o.product_id = p.id\nGROUP BY c.id, c.name\nORDER BY total_spent DESC;\n",
+    "expectedColumns": [
+      "customer_name",
+      "total_spent"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "joins-3",
+    "topicId": "joins",
+    "title": "8. Self-Join: Empleados y sus Supervisores",
+    "difficulty": "Medium",
+    "description": "\nPara cada empleado que sea supervisor (es decir, que al menos un empleado le reporte directamente), reporta su `employee_id`, su `name`, la cantidad de personas que le reportan (`reports_count`), y el promedio de edad de sus subordinados redondeado al entero más cercano (`average_age`).\nOrdena por `employee_id`.\n\n### Tabla: `Employees`\n| Column Name | Type |\n| :--- | :--- |\n| employee_id | int |\n| name | varchar |\n| reports_to | int |\n| age | int |\n\n### Formato de Salida\n| employee_id | name | reports_count | average_age |\n| :--- | :--- | :--- | :--- |\n| 9 | Hercy | 2 | 39 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Employees;\nCREATE TABLE Employees (employee_id INT PRIMARY KEY, name VARCHAR(50), reports_to INT, age INT);\n",
+    "seedDML": "\nINSERT INTO Employees VALUES \n(9, 'Hercy', NULL, 43),\n(6, 'Alice', 9, 41),\n(4, 'Bob', 9, 36),\n(2, 'Winston', NULL, 37);\n",
+    "starterCode": "SELECT mgr.employee_id, mgr.name, ...\nFROM Employees emp\nJOIN Employees mgr ON ...\nGROUP BY mgr.employee_id, mgr.name\nORDER BY mgr.employee_id;\n",
+    "solutionSQL": "\nSELECT \n    mgr.employee_id,\n    mgr.name,\n    COUNT(emp.employee_id) AS reports_count,\n    ROUND(AVG(emp.age)) AS average_age\nFROM Employees emp\nJOIN Employees mgr ON emp.reports_to = mgr.employee_id\nGROUP BY mgr.employee_id, mgr.name\nORDER BY mgr.employee_id;\n",
+    "expectedColumns": [
+      "employee_id",
+      "name",
+      "reports_count",
+      "average_age"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "dates-1",
+    "topicId": "dates",
+    "title": "9. Temperaturas Crecientes (DATEDIFF)",
+    "difficulty": "Easy",
+    "description": "\nEscribe una consulta para encontrar todos los `id` de las fechas con temperaturas mayores comparadas con su fecha anterior previa (ayer).\n\n### Tabla: `Weather`\n| id | recordDate | temperature |\n| :--- | :--- | :--- |\n| 1 | 2015-01-01 | 10 |\n| 2 | 2015-01-02 | 25 |\n| 3 | 2015-01-03 | 20 |\n| 4 | 2015-01-04 | 30 |\n| 5 | 2015-01-10 | 35 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Weather;\nCREATE TABLE Weather (id INT PRIMARY KEY, recordDate DATE, temperature INT);\n",
+    "seedDML": "\nINSERT INTO Weather VALUES \n(1, '2015-01-01', 10), \n(2, '2015-01-02', 25), \n(3, '2015-01-03', 20), \n(4, '2015-01-04', 30),\n(5, '2015-01-10', 35);\n",
+    "starterCode": "SELECT w1.id\nFROM Weather w1\nJOIN Weather w2 ON DATEDIFF(...) = 1\nWHERE ...;\n",
+    "solutionSQL": "\nSELECT w1.id\nFROM Weather w1\nJOIN Weather w2 ON DATEDIFF(w1.recordDate, w2.recordDate) = 1\nWHERE w1.temperature > w2.temperature;\n",
+    "expectedColumns": [
+      "id"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "dates-2",
+    "topicId": "dates",
+    "title": "10. Ventana Móvil de 30 Días (SUBDATE / DATE_SUB)",
+    "difficulty": "Medium",
+    "description": "\nEncuentra los usuarios activos diarios para un período de 30 días que finaliza el `2019-07-27` inclusive.\nUn usuario activo es aquel que realizó al menos una actividad en ese día.\nColumnas: `day`, `active_users`.\n\n### Tabla: `UserActivity`\n| user_id | session_id | activity_date | activity_type |\n| :--- | :--- | :--- | :--- |\n| 1 | 1 | 2019-07-20 | open_session |\n| 1 | 1 | 2019-07-20 | scroll_down |\n| 2 | 4 | 2019-07-20 | open_session |\n| 2 | 4 | 2019-07-21 | open_session |\n| 3 | 2 | 2019-06-25 | open_session |\n| 4 | 3 | 2019-06-27 | open_session |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS UserActivity;\nCREATE TABLE UserActivity (user_id INT, session_id INT, activity_date DATE, activity_type VARCHAR(20));\n",
+    "seedDML": "\nINSERT INTO UserActivity VALUES \n(1, 1, '2019-07-20', 'open_session'),\n(1, 1, '2019-07-20', 'scroll_down'),\n(2, 4, '2019-07-20', 'open_session'),\n(2, 4, '2019-07-21', 'open_session'),\n(3, 2, '2019-06-25', 'open_session'),\n(4, 3, '2019-06-27', 'open_session');\n",
+    "starterCode": "SELECT activity_date AS day, COUNT(DISTINCT user_id) AS active_users\nFROM UserActivity\nWHERE activity_date BETWEEN ... AND ...\nGROUP BY activity_date;\n",
+    "solutionSQL": "\nSELECT \n    activity_date AS day, \n    COUNT(DISTINCT user_id) AS active_users\nFROM UserActivity\nWHERE activity_date BETWEEN DATE_SUB('2019-07-27', INTERVAL 29 DAY) AND '2019-07-27'\nGROUP BY activity_date;\n",
+    "expectedColumns": [
+      "day",
+      "active_users"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "dedup-1",
+    "topicId": "deduplication",
+    "title": "11. Deduplicación Analítica con ROW_NUMBER()",
+    "difficulty": "Medium",
+    "description": "\nEn una tabla con registros duplicados por `email`, mantén únicamente el registro con el menor `id` para cada email.\nReporta las filas deduplicadas completas: `id`, `email`, `name`.\nOrdena por `id` ascendente.\n\n### Tabla: `Person`\n| Column Name | Type |\n| :--- | :--- |\n| id | int |\n| email | varchar |\n| name | varchar |\n\n### Formato de Salida\n| id | email | name |\n| :--- | :--- | :--- |\n| 1 | john@example.com | John Doe |\n| 2 | bob@example.com | Bob Ross |\n| 4 | alice@example.com | Alice Smith |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Person;\nCREATE TABLE Person (id INT PRIMARY KEY, email VARCHAR(100), name VARCHAR(50));\n",
+    "seedDML": "\nINSERT INTO Person VALUES \n(1, 'john@example.com', 'John Doe'),\n(2, 'bob@example.com', 'Bob Ross'),\n(3, 'john@example.com', 'John Aaron'),\n(4, 'alice@example.com', 'Alice Smith');\n",
+    "starterCode": "WITH RankedPersons AS (\n    SELECT id, email, name, ... AS rn\n    FROM Person\n)\nSELECT id, email, name\nFROM RankedPersons\nWHERE rn = 1\nORDER BY id;\n",
+    "solutionSQL": "\nWITH RankedPersons AS (\n    SELECT \n        id, \n        email, \n        name,\n        ROW_NUMBER() OVER (PARTITION BY email ORDER BY id ASC) AS rn\n    FROM Person\n)\nSELECT id, email, name\nFROM RankedPersons\nWHERE rn = 1\nORDER BY id;\n",
+    "expectedColumns": [
+      "id",
+      "email",
+      "name"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "dedup-2",
+    "topicId": "deduplication",
+    "title": "12. Materias Únicas por Profesor (COUNT DISTINCT)",
+    "difficulty": "Easy",
+    "description": "\nCalcula el número de materias únicas que imparte cada profesor en la universidad.\nColumnas: `teacher_id`, `cnt`.\n\n### Tabla: `Teacher`\n| teacher_id | subject_id | dept_id |\n| :--- | :--- | :--- |\n| 1 | 2 | 3 |\n| 1 | 2 | 4 |\n| 1 | 3 | 3 |\n| 2 | 1 | 1 |\n| 2 | 2 | 1 |\n| 2 | 3 | 1 |\n| 2 | 4 | 1 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Teacher;\nCREATE TABLE Teacher (teacher_id INT, subject_id INT, dept_id INT);\n",
+    "seedDML": "\nINSERT INTO Teacher VALUES \n(1, 2, 3), (1, 2, 4), (1, 3, 3),\n(2, 1, 1), (2, 2, 1), (2, 3, 1), (2, 4, 1);\n",
+    "starterCode": "SELECT teacher_id, COUNT(...) AS cnt\nFROM Teacher\nGROUP BY teacher_id;\n",
+    "solutionSQL": "\nSELECT teacher_id, COUNT(DISTINCT subject_id) AS cnt\nFROM Teacher\nGROUP BY teacher_id;\n",
+    "expectedColumns": [
+      "teacher_id",
+      "cnt"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "strings-1",
+    "topicId": "strings",
+    "title": "13. Corrección de Nombres (CONCAT, UPPER, LOWER)",
+    "difficulty": "Easy",
+    "description": "\nCorrige los nombres para que solo el primer carácter sea mayúscula y el resto minúsculas.\nOrdena el resultado por `user_id`.\n\n### Tabla: `Users`\n| user_id | name |\n| :--- | :--- |\n| 1 | aLice |\n| 2 | bOB |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Users;\nCREATE TABLE Users (user_id INT PRIMARY KEY, name VARCHAR(50));\n",
+    "seedDML": "\nINSERT INTO Users VALUES (1, 'aLice'), (2, 'bOB');\n",
+    "starterCode": "SELECT user_id, ... AS name\nFROM Users\nORDER BY user_id;\n",
+    "solutionSQL": "\nSELECT \n    user_id,\n    CONCAT(UPPER(SUBSTRING(name, 1, 1)), LOWER(SUBSTRING(name, 2))) AS name\nFROM Users\nORDER BY user_id;\n",
+    "expectedColumns": [
+      "user_id",
+      "name"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "strings-2",
+    "topicId": "strings",
+    "title": "14. Tweets Inválidos (CHAR_LENGTH vs LENGTH)",
+    "difficulty": "Easy",
+    "description": "\nEncuentra los IDs de los tweets inválidos. Un tweet es inválido si el número de caracteres utilizados en el contenido del tweet es **estrictamente mayor a 15**.\n*Atención al Staff Engineer:* Asegúrate de contar caracteres lógicos (`CHAR_LENGTH`) y no bytes físicos (`LENGTH`), para soportar caracteres multibyte y emojis.\n\n### Tabla: `Tweets`\n| tweet_id | content |\n| :--- | :--- |\n| 1 | Vote for Biden |\n| 2 | Let us make America great again! |\n| 3 | ñandú ñoño café |\n| 4 | 🎉🎉🎉🎉🎉🎉🎉🎉 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Tweets;\nCREATE TABLE Tweets (tweet_id INT PRIMARY KEY, content VARCHAR(100)) DEFAULT CHARSET=utf8mb4;\n",
+    "seedDML": "\nINSERT INTO Tweets VALUES \n(1, 'Vote for Biden'),\n(2, 'Let us make America great again!'),\n(3, 'ñandú ñoño café'),\n(4, '🎉🎉🎉🎉🎉🎉🎉🎉');\n",
+    "starterCode": "SELECT tweet_id\nFROM Tweets\nWHERE CHAR_LENGTH(...) > 15;\n",
+    "solutionSQL": "\nSELECT tweet_id\nFROM Tweets\nWHERE CHAR_LENGTH(content) > 15;\n",
+    "expectedColumns": [
+      "tweet_id"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "ctes-1",
+    "topicId": "ctes",
+    "title": "15. Salarios Superiores al Promedio Departamental",
+    "difficulty": "Medium",
+    "description": "\nUsa una CTE para calcular el salario promedio por departamento, y luego en la consulta principal reporta los empleados cuyo salario supere el promedio de su departamento.\nColumnas: `name`, `salary`, `dept_id`.\n\n### Tabla: `Staff`\n| Column Name | Type |\n| :--- | :--- |\n| id | int |\n| name | varchar |\n| dept_id | int |\n| salary | int |\n\n### Formato de Salida\n| name | salary | dept_id |\n| :--- | :--- | :--- |\n| Alice | 70000 | 1 |\n| David | 95000 | 2 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Staff;\nCREATE TABLE Staff (id INT PRIMARY KEY, name VARCHAR(50), dept_id INT, salary INT);\n",
+    "seedDML": "\nINSERT INTO Staff VALUES \n(1, 'Alice', 1, 70000), \n(2, 'Bob', 1, 60000), \n(3, 'Charlie', 2, 80000), \n(4, 'David', 2, 95000);\n",
+    "starterCode": "WITH DeptAvg AS (\n    SELECT \n)\nSELECT s.name, s.salary, s.dept_id\nFROM Staff s\nJOIN DeptAvg d ON s.dept_id = d.dept_id\nWHERE ...;\n",
+    "solutionSQL": "\nWITH DeptAvg AS (\n    SELECT dept_id, AVG(salary) AS avg_sal\n    FROM Staff\n    GROUP BY dept_id\n)\nSELECT s.name, s.salary, s.dept_id\nFROM Staff s\nJOIN DeptAvg d ON s.dept_id = d.dept_id\nWHERE s.salary > d.avg_sal;\n",
+    "expectedColumns": [
+      "name",
+      "salary",
+      "dept_id"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "ctes-2",
+    "topicId": "ctes",
+    "title": "16. Chained CTEs: Región Líder en Ventas",
+    "difficulty": "Hard",
+    "description": "\nTienes las ventas por sucursal y la región a la que pertenece cada una.\nUsa **dos CTEs encadenadas**:\n1. `RegionalSales`: Calcula la venta total por región.\n2. `TopRegion`: Selecciona la región con la venta total máxima.\nEn la consulta final, reporta los nombres de las sucursales y sus ventas individuales que pertenezcan a dicha región líder.\nColumnas: `branch_name`, `sales`. Ordena por `sales` desc.\n\n### Tabla: `Branches`\n| Column Name | Type |\n| :--- | :--- |\n| id | int |\n| branch_name | varchar |\n| region | varchar |\n| sales | decimal |\n\n### Formato de Salida\n| branch_name | sales |\n| :--- | :--- |\n| Soyapango Plaza | 22000.00 |\n| San Salvador Central | 15000.00 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Branches;\nCREATE TABLE Branches (id INT PRIMARY KEY, branch_name VARCHAR(50), region VARCHAR(20), sales DECIMAL(10,2));\n",
+    "seedDML": "\nINSERT INTO Branches VALUES \n(1, 'San Salvador Central', 'Central', 15000.00),\n(2, 'Soyapango Plaza', 'Central', 22000.00),\n(3, 'Santa Ana Centro', 'Occidente', 12000.00),\n(4, 'Sonsonate Puerto', 'Occidente', 8000.00),\n(5, 'San Miguel Triángulo', 'Oriente', 19000.00);\n",
+    "starterCode": "WITH RegionalSales AS (\n    SELECT region, SUM(sales) AS total_sales\n    FROM Branches\n    GROUP BY region\n),\nTopRegion AS (\n    SELECT region\n    FROM RegionalSales\n    ORDER BY total_sales DESC\n    LIMIT 1\n)\nSELECT b.branch_name, b.sales\nFROM Branches b\nJOIN TopRegion tr ON b.region = tr.region\nORDER BY b.sales DESC;\n",
+    "solutionSQL": "\nWITH RegionalSales AS (\n    SELECT region, SUM(sales) AS total_sales\n    FROM Branches\n    GROUP BY region\n),\nTopRegion AS (\n    SELECT region\n    FROM RegionalSales\n    ORDER BY total_sales DESC\n    LIMIT 1\n)\nSELECT b.branch_name, b.sales\nFROM Branches b\nJOIN TopRegion tr ON b.region = tr.region\nORDER BY b.sales DESC;\n",
+    "expectedColumns": [
+      "branch_name",
+      "sales"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "subqueries-1",
+    "topicId": "subqueries",
+    "title": "17. Gerentes con al menos 5 Reportes Directos",
+    "difficulty": "Medium",
+    "description": "\nEscribe una consulta para reportar a los gerentes que tienen al menos **5 subordinados directos**.\nRetorna la columna `name`.\n\n### Tabla: `Employee`\n| id | name | department | managerId |\n| :--- | :--- | :--- | :--- |\n| 101 | John | A | null |\n| 102 | Dan | A | 101 |\n| 103 | James | A | 101 |\n| 104 | Amy | A | 101 |\n| 105 | Anne | A | 101 |\n| 106 | Ron | B | 101 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Employee;\nCREATE TABLE Employee (id INT PRIMARY KEY, name VARCHAR(50), department VARCHAR(5), managerId INT);\n",
+    "seedDML": "\nINSERT INTO Employee VALUES \n(101, 'John', 'A', NULL),\n(102, 'Dan', 'A', 101),\n(103, 'James', 'A', 101),\n(104, 'Amy', 'A', 101),\n(105, 'Anne', 'A', 101),\n(106, 'Ron', 'B', 101),\n(107, 'Peter', 'B', NULL);\n",
+    "starterCode": "SELECT name\nFROM Employee\nWHERE id IN (\n    SELECT ...\n);\n",
+    "solutionSQL": "\nSELECT name\nFROM Employee\nWHERE id IN (\n    SELECT managerId\n    FROM Employee\n    GROUP BY managerId\n    HAVING COUNT(*) >= 5\n);\n",
+    "expectedColumns": [
+      "name"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "subqueries-2",
+    "topicId": "subqueries",
+    "title": "18. Empleados Cuyo Manager Dejó la Empresa",
+    "difficulty": "Easy",
+    "description": "\nEncuentra los IDs de los empleados cuyo salario es **estrictamente menor a $30,000** y cuyo manager directo ha dejado la compañía (es decir, el `manager_id` no existe en la columna `employee_id` de la tabla, pero es distinto de `NULL`).\nOrdena por `employee_id`.\n\n### Tabla: `Employees`\n| Column Name | Type |\n| :--- | :--- |\n| employee_id | int |\n| name | varchar |\n| manager_id | int |\n| salary | int |\n\n### Formato de Salida\n| employee_id |\n| :--- |\n| 11 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Employees;\nCREATE TABLE Employees (employee_id INT PRIMARY KEY, name VARCHAR(50), manager_id INT, salary INT);\n",
+    "seedDML": "\nINSERT INTO Employees VALUES \n(3, 'Mila', 9, 60301),\n(12, 'Antonella', NULL, 31000),\n(13, 'Emery', NULL, 67084),\n(1, 'Kalel', 11, 21241),\n(9, 'Mikaela', NULL, 50937),\n(11, 'Joziah', 6, 28485);\n",
+    "starterCode": "SELECT employee_id\nFROM Employees\nWHERE salary < 30000\n  AND manager_id IS NOT NULL\n  AND manager_id NOT IN (SELECT employee_id FROM Employees)\nORDER BY employee_id;\n",
+    "solutionSQL": "\nSELECT employee_id\nFROM Employees\nWHERE salary < 30000\n  AND manager_id IS NOT NULL\n  AND manager_id NOT IN (\n      SELECT employee_id FROM Employees WHERE employee_id IS NOT NULL\n  )\nORDER BY employee_id;\n",
+    "expectedColumns": [
+      "employee_id"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "window-1",
+    "topicId": "window_functions",
+    "title": "19. Números Consecutivos (LEAD / LAG)",
+    "difficulty": "Medium",
+    "description": "\nEncuentra todos los números que aparecen al menos tres veces consecutivas en la tabla de logs.\nRetorna el resultado en la columna `ConsecutiveNums` sin duplicados.\n\n### Tabla: `Logs`\n| id | num |\n| :--- | :--- |\n| 1 | 1 |\n| 2 | 2 |\n| 3 | 1 |\n| 7 | 2 |\n| 8 | 1 |\n| 9 | 1 |\n| 15 | 1 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Logs;\nCREATE TABLE Logs (id INT PRIMARY KEY, num INT);\n",
+    "seedDML": "\nINSERT INTO Logs VALUES \n(1, 1), (2, 2), (3, 1), (7, 2), (8, 1), (9, 1), (15, 1);\n",
+    "starterCode": "WITH RankedLogs AS (\n    SELECT \n        num,\n        LAG(num, 1) OVER (ORDER BY id) AS prev_num,\n        LEAD(num, 1) OVER (ORDER BY id) AS next_num\n    FROM Logs\n)\nSELECT DISTINCT num AS ConsecutiveNums\nFROM RankedLogs\nWHERE ...;\n",
+    "solutionSQL": "\nWITH RankedLogs AS (\n    SELECT \n        num,\n        LAG(num, 1) OVER (ORDER BY id) AS prev_num,\n        LEAD(num, 1) OVER (ORDER BY id) AS next_num\n    FROM Logs\n)\nSELECT DISTINCT num AS ConsecutiveNums\nFROM RankedLogs\nWHERE num = prev_num AND num = next_num;\n",
+    "expectedColumns": [
+      "ConsecutiveNums"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "window-2",
+    "topicId": "window_functions",
+    "title": "20. Top Salario por Departamento (DENSE_RANK)",
+    "difficulty": "Medium",
+    "description": "\nEncuentra los empleados que tienen el salario más alto en cada uno de los departamentos.\nSi hay empates en el salario más alto, repórtalos a todos.\nColumnas: `Department`, `Employee`, `Salary`.\n\n### Tabla: `Department`\n| Column Name | Type |\n| :--- | :--- |\n| id | int |\n| name | varchar |\n\n### Tabla: `EmployeeDept`\n| Column Name | Type |\n| :--- | :--- |\n| id | int |\n| name | varchar |\n| salary | int |\n| departmentId | int |\n\n### Formato de Salida\n| Department | Employee | Salary |\n| :--- | :--- | :--- |\n| IT | Max | 90000 |\n| IT | Janet | 90000 |\n| Sales | Henry | 80000 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS EmployeeDept;\nDROP TABLE IF EXISTS Department;\nCREATE TABLE Department (id INT PRIMARY KEY, name VARCHAR(50));\nCREATE TABLE EmployeeDept (id INT PRIMARY KEY, name VARCHAR(50), salary INT, departmentId INT);\n",
+    "seedDML": "\nINSERT INTO Department VALUES (1, 'IT'), (2, 'Sales');\nINSERT INTO EmployeeDept VALUES \n(1, 'Joe', 85000, 1), \n(2, 'Henry', 80000, 2), \n(3, 'Sam', 60000, 2), \n(4, 'Max', 90000, 1), \n(5, 'Janet', 90000, 1);\n",
+    "starterCode": "WITH RankedSalaries AS (\n    SELECT \n        d.name AS Department,\n        e.name AS Employee,\n        e.salary AS Salary,\n        DENSE_RANK() OVER (PARTITION BY ... ORDER BY ... DESC) AS rnk\n    FROM EmployeeDept e\n    JOIN Department d ON e.departmentId = d.id\n)\nSELECT Department, Employee, Salary\nFROM RankedSalaries\nWHERE rnk = 1;\n",
+    "solutionSQL": "\nWITH RankedSalaries AS (\n    SELECT \n        d.name AS Department,\n        e.name AS Employee,\n        e.salary AS Salary,\n        DENSE_RANK() OVER (PARTITION BY e.departmentId ORDER BY e.salary DESC) AS rnk\n    FROM EmployeeDept e\n    JOIN Department d ON e.departmentId = d.id\n)\nSELECT Department, Employee, Salary\nFROM RankedSalaries\nWHERE rnk = 1;\n",
+    "expectedColumns": [
+      "Department",
+      "Employee",
+      "Salary"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "window-3",
+    "topicId": "window_functions",
+    "title": "21. Suma Acumulativa Móvil (Running Total)",
+    "difficulty": "Hard",
+    "description": "\nCalcula la suma acumulativa de transacciones (`running_total`) para cada cliente a lo largo del tiempo ordenada cronológicamente por `transaction_date` y `id`.\nColumnas: `customer_id`, `transaction_date`, `amount`, `running_total`.\n\n### Tabla: `BankTransactions`\n| Column Name | Type |\n| :--- | :--- |\n| id | int |\n| customer_id | int |\n| transaction_date | date |\n| amount | decimal |\n\n### Formato de Salida\n| customer_id | transaction_date | amount | running_total |\n| :--- | :--- | :--- | :--- |\n| 101 | 2023-01-01 | 500.00 | 500.00 |\n| 101 | 2023-01-05 | 250.00 | 750.00 |\n| 101 | 2023-01-10 | -100.00 | 650.00 |\n| 102 | 2023-01-02 | 1200.00 | 1200.00 |\n| 102 | 2023-01-08 | -300.00 | 900.00 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS BankTransactions;\nCREATE TABLE BankTransactions (id INT PRIMARY KEY, customer_id INT, transaction_date DATE, amount DECIMAL(10,2));\n",
+    "seedDML": "\nINSERT INTO BankTransactions VALUES \n(1, 101, '2023-01-01', 500.00),\n(2, 101, '2023-01-05', 250.00),\n(3, 101, '2023-01-10', -100.00),\n(4, 102, '2023-01-02', 1200.00),\n(5, 102, '2023-01-08', -300.00);\n",
+    "starterCode": "SELECT \n    customer_id,\n    transaction_date,\n    amount,\n    SUM(amount) OVER (\n        PARTITION BY ...\n        ORDER BY ...\n        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW\n    ) AS running_total\nFROM BankTransactions\nORDER BY customer_id, transaction_date, id;\n",
+    "solutionSQL": "\nSELECT \n    customer_id,\n    transaction_date,\n    amount,\n    SUM(amount) OVER (\n        PARTITION BY customer_id\n        ORDER BY transaction_date, id\n        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW\n    ) AS running_total\nFROM BankTransactions\nORDER BY customer_id, transaction_date, id;\n",
+    "expectedColumns": [
+      "customer_id",
+      "transaction_date",
+      "amount",
+      "running_total"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "recursive-1",
+    "topicId": "recursive_ctes",
+    "title": "22. Niveles del Organigrama (WITH RECURSIVE)",
+    "difficulty": "Medium",
+    "description": "\nDada la tabla `Org`, reporta cada empleado con su nivel jerárquico (`level`). El CEO (sin manager) está en nivel 1; sus reportes directos en nivel 2, etc.\nColumnas: `id`, `name`, `level`. Ordena por `level`, `id`.\n\n### Tabla: `Org`\n| id | name | manager_id |\n| :--- | :--- | :--- |\n| 1 | Ana | NULL |\n| 2 | Luis | 1 |\n| 3 | Marta | 1 |\n| 4 | Pedro | 2 |\n| 5 | Sofía | 4 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Org;\nCREATE TABLE Org (id INT PRIMARY KEY, name VARCHAR(50), manager_id INT);\n",
+    "seedDML": "\nINSERT INTO Org VALUES (1,'Ana',NULL),(2,'Luis',1),(3,'Marta',1),(4,'Pedro',2),(5,'Sofía',4);\n",
+    "starterCode": "WITH RECURSIVE tree AS (\n    SELECT id, name, 1 AS level\n    FROM Org\n    WHERE manager_id IS NULL\n    UNION ALL\n    SELECT ...\n)\nSELECT id, name, level FROM tree ORDER BY level, id;\n",
+    "solutionSQL": "\nWITH RECURSIVE tree AS (\n    SELECT id, name, 1 AS level\n    FROM Org\n    WHERE manager_id IS NULL\n    UNION ALL\n    SELECT o.id, o.name, t.level + 1\n    FROM Org o\n    JOIN tree t ON o.manager_id = t.id\n)\nSELECT id, name, level FROM tree ORDER BY level, id;\n",
+    "expectedColumns": [
+      "id",
+      "name",
+      "level"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "recursive-2",
+    "topicId": "recursive_ctes",
+    "title": "23. Calendario con Días sin Pedidos",
+    "difficulty": "Hard",
+    "description": "\nReporta el número de pedidos por día para **todos** los días del 2023-01-01 al 2023-01-07, incluyendo los días sin pedidos (con `0`).\nColumnas: `day`, `orders_count`. Ordena por `day`.\n*Pista:* genera la serie de fechas con una CTE recursiva y haz `LEFT JOIN`.\n\n### Tabla: `Orders`\n| id | order_date |\n| :--- | :--- |\n| 1 | 2023-01-01 |\n| 2 | 2023-01-01 |\n| 3 | 2023-01-03 |\n| 4 | 2023-01-06 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Orders;\nCREATE TABLE Orders (id INT PRIMARY KEY, order_date DATE);\n",
+    "seedDML": "\nINSERT INTO Orders VALUES (1,'2023-01-01'),(2,'2023-01-01'),(3,'2023-01-03'),(4,'2023-01-06');\n",
+    "starterCode": "WITH RECURSIVE days AS (\n    SELECT DATE('2023-01-01') AS day\n    UNION ALL\n    SELECT ...\n)\nSELECT d.day, COUNT(o.id) AS orders_count\nFROM days d\nLEFT JOIN Orders o ON ...\nGROUP BY d.day\nORDER BY d.day;\n",
+    "solutionSQL": "\nWITH RECURSIVE days AS (\n    SELECT DATE('2023-01-01') AS day\n    UNION ALL\n    SELECT DATE_ADD(day, INTERVAL 1 DAY) FROM days WHERE day < '2023-01-07'\n)\nSELECT d.day, COUNT(o.id) AS orders_count\nFROM days d\nLEFT JOIN Orders o ON o.order_date = d.day\nGROUP BY d.day\nORDER BY d.day;\n",
+    "expectedColumns": [
+      "day",
+      "orders_count"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "pivot-1",
+    "topicId": "pivots",
+    "title": "24. Ventas por Trimestre (Pivot)",
+    "difficulty": "Medium",
+    "description": "\nConvierte las ventas por trimestre en columnas. Una fila por producto con `q1`, `q2`, `q3`, `q4` (0 si no hubo ventas). Ordena por `product`.\n\n### Tabla: `Sales`\n| product | quarter | amount |\n| :--- | :--- | :--- |\n| Laptop | Q1 | 100 |\n| Laptop | Q2 | 150 |\n| Mouse | Q1 | 20 |\n| Mouse | Q4 | 35 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Sales;\nCREATE TABLE Sales (product VARCHAR(30), quarter CHAR(2), amount INT);\n",
+    "seedDML": "\nINSERT INTO Sales VALUES ('Laptop','Q1',100),('Laptop','Q2',150),('Mouse','Q1',20),('Mouse','Q4',35);\n",
+    "starterCode": "SELECT product,\n       SUM(CASE WHEN quarter = 'Q1' THEN amount ELSE 0 END) AS q1\n       -- q2, q3, q4 ...\nFROM Sales\nGROUP BY product\nORDER BY product;\n",
+    "solutionSQL": "\nSELECT product,\n       SUM(CASE WHEN quarter = 'Q1' THEN amount ELSE 0 END) AS q1,\n       SUM(CASE WHEN quarter = 'Q2' THEN amount ELSE 0 END) AS q2,\n       SUM(CASE WHEN quarter = 'Q3' THEN amount ELSE 0 END) AS q3,\n       SUM(CASE WHEN quarter = 'Q4' THEN amount ELSE 0 END) AS q4\nFROM Sales\nGROUP BY product\nORDER BY product;\n",
+    "expectedColumns": [
+      "product",
+      "q1",
+      "q2",
+      "q3",
+      "q4"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "pivot-2",
+    "topicId": "pivots",
+    "title": "25. Occupations (HackerRank Classic)",
+    "difficulty": "Hard",
+    "description": "\nPivota la tabla `Occupations` para que cada ocupación sea una columna (`Doctor`, `Professor`, `Singer`, `Actor`, en ese orden) con los nombres ordenados alfabéticamente. Si una columna se queda sin nombres, muestra `NULL`.\n\n### Tabla: `Occupations`\n| name | occupation |\n| :--- | :--- |\n| Samantha | Doctor |\n| Julia | Actor |\n| Maria | Actor |\n| Meera | Singer |\n| Ashely | Professor |\n| Ketty | Professor |\n| Christeen | Professor |\n| Jane | Actor |\n| Jenny | Doctor |\n| Priya | Singer |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Occupations;\nCREATE TABLE Occupations (name VARCHAR(30), occupation VARCHAR(30));\n",
+    "seedDML": "\nINSERT INTO Occupations VALUES\n('Samantha','Doctor'),('Julia','Actor'),('Maria','Actor'),('Meera','Singer'),('Ashely','Professor'),\n('Ketty','Professor'),('Christeen','Professor'),('Jane','Actor'),('Jenny','Doctor'),('Priya','Singer');\n",
+    "starterCode": "SELECT\n    MAX(CASE WHEN occupation = 'Doctor' THEN name END) AS Doctor\n    -- Professor, Singer, Actor ...\nFROM (\n    SELECT name, occupation,\n           ROW_NUMBER() OVER (PARTITION BY occupation ORDER BY name) AS rn\n    FROM Occupations\n) t\nGROUP BY rn\nORDER BY rn;\n",
+    "solutionSQL": "\nSELECT\n    MAX(CASE WHEN occupation = 'Doctor'    THEN name END) AS Doctor,\n    MAX(CASE WHEN occupation = 'Professor' THEN name END) AS Professor,\n    MAX(CASE WHEN occupation = 'Singer'    THEN name END) AS Singer,\n    MAX(CASE WHEN occupation = 'Actor'     THEN name END) AS Actor\nFROM (\n    SELECT name, occupation,\n           ROW_NUMBER() OVER (PARTITION BY occupation ORDER BY name) AS rn\n    FROM Occupations\n) t\nGROUP BY rn\nORDER BY rn;\n",
+    "expectedColumns": [
+      "Doctor",
+      "Professor",
+      "Singer",
+      "Actor"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "window-4",
+    "topicId": "window_functions",
+    "title": "26. Media Móvil de 3 Días (ROWS BETWEEN)",
+    "difficulty": "Medium",
+    "description": "\nPara cada día calcula el promedio de ventas de ese día y los 2 anteriores (`moving_avg`, redondeado a 2 decimales). Los primeros días usan los registros disponibles.\nColumnas: `day`, `amount`, `moving_avg`. Ordena por `day`.\n\n### Tabla: `DailySales`\n| day | amount |\n| :--- | :--- |\n| 2023-01-01 | 100 |\n| 2023-01-02 | 200 |\n| 2023-01-03 | 300 |\n| 2023-01-04 | 100 |\n| 2023-01-05 | 500 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS DailySales;\nCREATE TABLE DailySales (day DATE PRIMARY KEY, amount INT);\n",
+    "seedDML": "\nINSERT INTO DailySales VALUES ('2023-01-01',100),('2023-01-02',200),('2023-01-03',300),('2023-01-04',100),('2023-01-05',500);\n",
+    "starterCode": "SELECT day, amount,\n       ROUND(AVG(amount) OVER (\n           ORDER BY day\n           ROWS BETWEEN ... AND CURRENT ROW\n       ), 2) AS moving_avg\nFROM DailySales\nORDER BY day;\n",
+    "solutionSQL": "\nSELECT day, amount,\n       ROUND(AVG(amount) OVER (ORDER BY day ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 2) AS moving_avg\nFROM DailySales\nORDER BY day;\n",
+    "expectedColumns": [
+      "day",
+      "amount",
+      "moving_avg"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "window-5",
+    "topicId": "window_functions",
+    "title": "27. Segundo Salario Más Alto (o NULL)",
+    "difficulty": "Medium",
+    "description": "\nReporta el segundo salario **distinto** más alto como `SecondHighestSalary`. Si no existe, la consulta debe devolver **una fila con NULL** (no un conjunto vacío).\n\n### Tabla: `Emp`\n| id | salary |\n| :--- | :--- |\n| 1 | 100 |\n| 2 | 200 |\n| 3 | 300 |\n| 4 | 300 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Emp;\nCREATE TABLE Emp (id INT PRIMARY KEY, salary INT);\n",
+    "seedDML": "\nINSERT INTO Emp VALUES (1,100),(2,200),(3,300),(4,300);\n",
+    "starterCode": "SELECT (\n    SELECT DISTINCT salary\n    FROM (\n        SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS r\n        FROM Emp\n    ) t\n    WHERE r = 2\n) AS SecondHighestSalary;\n",
+    "solutionSQL": "\nSELECT (\n    SELECT DISTINCT salary\n    FROM (\n        SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS r\n        FROM Emp\n    ) t\n    WHERE r = 2\n) AS SecondHighestSalary;\n",
+    "expectedColumns": [
+      "SecondHighestSalary"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "gaps-1",
+    "topicId": "window_functions",
+    "title": "28. Rachas de Login Consecutivas (Gaps & Islands)",
+    "difficulty": "Hard",
+    "description": "\nEncuentra, por usuario, cada racha de días consecutivos de login. Reporta `user_id`, `start_date`, `end_date`, `days`. Ordena por `user_id`, `start_date`.\n*Pista:* `login_date - ROW_NUMBER()` es constante dentro de una racha.\n\n### Tabla: `Logins`\n| user_id | login_date |\n| :--- | :--- |\n| 1 | 2023-01-01 |\n| 1 | 2023-01-02 |\n| 1 | 2023-01-03 |\n| 1 | 2023-01-06 |\n| 2 | 2023-01-02 |\n| 2 | 2023-01-04 |\n| 2 | 2023-01-05 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Logins;\nCREATE TABLE Logins (user_id INT, login_date DATE, PRIMARY KEY (user_id, login_date));\n",
+    "seedDML": "\nINSERT INTO Logins VALUES (1,'2023-01-01'),(1,'2023-01-02'),(1,'2023-01-03'),(1,'2023-01-06'),(2,'2023-01-02'),(2,'2023-01-04'),(2,'2023-01-05');\n",
+    "starterCode": "WITH numbered AS (\n    SELECT user_id, login_date,\n           ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY login_date) AS rn\n    FROM Logins\n),\ngrouped AS (\n    SELECT user_id, login_date,\n           DATE_SUB(login_date, INTERVAL rn DAY) AS grp\n    FROM numbered\n)\nSELECT user_id, MIN(login_date) AS start_date, MAX(login_date) AS end_date, COUNT(*) AS days\nFROM grouped\nGROUP BY user_id, grp\nORDER BY user_id, start_date;\n",
+    "solutionSQL": "\nWITH numbered AS (\n    SELECT user_id, login_date,\n           ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY login_date) AS rn\n    FROM Logins\n),\ngrouped AS (\n    SELECT user_id, login_date,\n           DATE_SUB(login_date, INTERVAL rn DAY) AS grp\n    FROM numbered\n)\nSELECT user_id, MIN(login_date) AS start_date, MAX(login_date) AS end_date, COUNT(*) AS days\nFROM grouped\nGROUP BY user_id, grp\nORDER BY user_id, start_date;\n",
+    "expectedColumns": [
+      "user_id",
+      "start_date",
+      "end_date",
+      "days"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "dates-3",
+    "topicId": "dates",
+    "title": "29. Retención de Día 1 (LeetCode 550)",
+    "difficulty": "Medium",
+    "description": "\nReporta la fracción de jugadores que volvieron a iniciar sesión el **día siguiente a su primer login**, redondeada a 2 decimales, como `fraction`.\n\n### Tabla: `Activity`\n| player_id | event_date | games_played |\n| :--- | :--- | :--- |\n| 1 | 2016-03-01 | 5 |\n| 1 | 2016-03-02 | 6 |\n| 2 | 2017-06-25 | 1 |\n| 3 | 2016-03-02 | 0 |\n| 3 | 2018-07-03 | 5 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Activity;\nCREATE TABLE Activity (player_id INT, event_date DATE, games_played INT, PRIMARY KEY (player_id, event_date));\n",
+    "seedDML": "\nINSERT INTO Activity VALUES (1,'2016-03-01',5),(1,'2016-03-02',6),(2,'2017-06-25',1),(3,'2016-03-02',0),(3,'2018-07-03',5);\n",
+    "starterCode": "WITH first_login AS (\n    SELECT player_id, MIN(event_date) AS first_date\n    FROM Activity\n    GROUP BY player_id\n)\nSELECT ROUND(... / ..., 2) AS fraction\nFROM first_login f\nJOIN Activity a ON ...;\n",
+    "solutionSQL": "\nWITH first_login AS (\n    SELECT player_id, MIN(event_date) AS first_date\n    FROM Activity\n    GROUP BY player_id\n)\nSELECT ROUND(\n    COUNT(DISTINCT a.player_id) / (SELECT COUNT(DISTINCT player_id) FROM Activity), 2\n) AS fraction\nFROM first_login f\nJOIN Activity a\n  ON a.player_id = f.player_id\n AND a.event_date = DATE_ADD(f.first_date, INTERVAL 1 DAY);\n",
+    "expectedColumns": [
+      "fraction"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "dates-4",
+    "topicId": "dates",
+    "title": "30. Reporte Mensual de Transacciones (LeetCode 1193)",
+    "difficulty": "Medium",
+    "description": "\nPor mes (`YYYY-MM`) y país reporta: `trans_count`, `approved_count`, `trans_total_amount`, `approved_total_amount`.\nColumnas: `month`, `country`, `trans_count`, `approved_count`, `trans_total_amount`, `approved_total_amount`. Ordena por `month`, `country`.\n\n### Tabla: `Transactions`\n| id | country | state | amount | trans_date |\n| :--- | :--- | :--- | :--- | :--- |\n| 121 | US | approved | 1000 | 2018-12-18 |\n| 122 | US | declined | 2000 | 2018-12-19 |\n| 123 | US | approved | 2000 | 2019-01-01 |\n| 124 | DE | approved | 2000 | 2019-01-07 |\n| 125 | CA | declined | 500 | 2019-01-15 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Transactions;\nCREATE TABLE Transactions (id INT PRIMARY KEY, country VARCHAR(10), state VARCHAR(10), amount INT, trans_date DATE);\n",
+    "seedDML": "\nINSERT INTO Transactions VALUES (121,'US','approved',1000,'2018-12-18'),(122,'US','declined',2000,'2018-12-19'),(123,'US','approved',2000,'2019-01-01'),(124,'DE','approved',2000,'2019-01-07'),(125,'CA','declined',500,'2019-01-15');\n",
+    "starterCode": "SELECT DATE_FORMAT(trans_date, '%Y-%m') AS month,\n       country,\n       COUNT(*) AS trans_count\n       -- approved_count, trans_total_amount, approved_total_amount\nFROM Transactions\nGROUP BY month, country\nORDER BY month, country;\n",
+    "solutionSQL": "\nSELECT DATE_FORMAT(trans_date, '%Y-%m') AS month,\n       country,\n       COUNT(*) AS trans_count,\n       SUM(state = 'approved') AS approved_count,\n       SUM(amount) AS trans_total_amount,\n       SUM(CASE WHEN state = 'approved' THEN amount ELSE 0 END) AS approved_total_amount\nFROM Transactions\nGROUP BY DATE_FORMAT(trans_date, '%Y-%m'), country\nORDER BY month, country;\n",
+    "expectedColumns": [
+      "month",
+      "country",
+      "trans_count",
+      "approved_count",
+      "trans_total_amount",
+      "approved_total_amount"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "dedup-3",
+    "topicId": "deduplication",
+    "title": "31. Último Registro por Usuario (Latest per Key)",
+    "difficulty": "Medium",
+    "description": "\nUn usuario puede tener varias versiones de su perfil. Reporta únicamente la versión **más reciente** (`updated_at`) de cada usuario.\nColumnas: `user_id`, `email`, `updated_at`. Ordena por `user_id`.\n\n### Tabla: `Profiles`\n| id | user_id | email | updated_at |\n| :--- | :--- | :--- | :--- |\n| 1 | 10 | a@old.com | 2023-01-01 08:00:00 |\n| 2 | 10 | a@new.com | 2023-03-01 09:30:00 |\n| 3 | 11 | b@x.com | 2023-02-01 10:00:00 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Profiles;\nCREATE TABLE Profiles (id INT PRIMARY KEY, user_id INT, email VARCHAR(100), updated_at DATETIME);\n",
+    "seedDML": "\nINSERT INTO Profiles VALUES (1,10,'a@old.com','2023-01-01 08:00:00'),(2,10,'a@new.com','2023-03-01 09:30:00'),(3,11,'b@x.com','2023-02-01 10:00:00');\n",
+    "starterCode": "WITH ranked AS (\n    SELECT user_id, email, updated_at,\n           ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ... DESC) AS rn\n    FROM Profiles\n)\nSELECT user_id, email, updated_at FROM ranked WHERE rn = 1 ORDER BY user_id;\n",
+    "solutionSQL": "\nWITH ranked AS (\n    SELECT user_id, email, updated_at,\n           ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY updated_at DESC) AS rn\n    FROM Profiles\n)\nSELECT user_id, email, updated_at FROM ranked WHERE rn = 1 ORDER BY user_id;\n",
+    "expectedColumns": [
+      "user_id",
+      "email",
+      "updated_at"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "window-6",
+    "topicId": "window_functions",
+    "title": "32. Top 3 Salarios Únicos por Departamento (LeetCode 185)",
+    "difficulty": "Hard",
+    "description": "\nUna empresa considera de altos ingresos a los empleados que se encuentran entre los **3 salarios únicos más altos** de su departamento.\nEscribe una consulta para reportar el departamento, el nombre del empleado y su salario para todos los empleados de altos ingresos.\nSi hay empates en algún nivel de salario, repórtalos a todos (usando `DENSE_RANK() <= 3`).\n\nColumnas: `Department`, `Employee`, `Salary`.\nOrdena por `Department` ASC, `Salary` DESC, `Employee` ASC.\n\n### Tabla: `Department`\n| id | name |\n| :--- | :--- |\n| 1 | IT |\n| 2 | Sales |\n\n### Tabla: `Employee`\n| id | name | salary | departmentId |\n| :--- | :--- | :--- | :--- |\n| 1 | Joe | 85000 | 1 |\n| 2 | Henry | 80000 | 1 |\n| 3 | Sam | 60000 | 2 |\n| 4 | Max | 90000 | 1 |\n| 5 | Janet | 69000 | 1 |\n| 6 | Randy | 85000 | 1 |\n| 7 | Will | 70000 | 1 |\n| 8 | Alice | 90000 | 2 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Employee;\nDROP TABLE IF EXISTS Department;\nCREATE TABLE Department (id INT PRIMARY KEY, name VARCHAR(50));\nCREATE TABLE Employee (id INT PRIMARY KEY, name VARCHAR(50), salary INT, departmentId INT);\n",
+    "seedDML": "\nINSERT INTO Department VALUES (1, 'IT'), (2, 'Sales');\nINSERT INTO Employee VALUES \n(1, 'Joe', 85000, 1),\n(2, 'Henry', 80000, 1),\n(3, 'Sam', 60000, 2),\n(4, 'Max', 90000, 1),\n(5, 'Janet', 69000, 1),\n(6, 'Randy', 85000, 1),\n(7, 'Will', 70000, 1),\n(8, 'Alice', 90000, 2);\n",
+    "starterCode": "WITH RankedSalaries AS (\n    SELECT \n        d.name AS Department,\n        e.name AS Employee,\n        e.salary AS Salary,\n        DENSE_RANK() OVER (PARTITION BY ... ORDER BY ... DESC) AS rnk\n    FROM Employee e\n    JOIN Department d ON e.departmentId = d.id\n)\nSELECT Department, Employee, Salary\nFROM RankedSalaries\nWHERE rnk <= 3\nORDER BY Department, Salary DESC, Employee;\n",
+    "solutionSQL": "\nWITH RankedSalaries AS (\n    SELECT \n        d.name AS Department,\n        e.name AS Employee,\n        e.salary AS Salary,\n        DENSE_RANK() OVER (PARTITION BY e.departmentId ORDER BY e.salary DESC) AS rnk\n    FROM Employee e\n    JOIN Department d ON e.departmentId = d.id\n)\nSELECT Department, Employee, Salary\nFROM RankedSalaries\nWHERE rnk <= 3\nORDER BY Department, Salary DESC, Employee;\n",
+    "expectedColumns": [
+      "Department",
+      "Employee",
+      "Salary"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "dedup-4",
+    "topicId": "deduplication",
+    "title": "33. Deduplicación Permisiva: Retener Empates con RANK()",
+    "difficulty": "Medium",
+    "description": "\nEn sistemas contables y de auditoría, a menudo se exige reportar **todas** las transacciones que alcanzaron el monto máximo por cliente, en lugar de descartar una arbitrariamente.\nDada la tabla `CustomerOrders`, reporta el `customer_id`, `order_id`, `amount` y `order_date` correspondientes a la compra más alta de cada cliente. \nSi un cliente tiene múltiples órdenes empatadas con el mismo monto máximo idéntico, **debes reportar todas ellas** (usando `RANK() = 1`).\n\nColumnas: `customer_id`, `order_id`, `amount`, `order_date`.\nOrdena por `customer_id` ASC, `order_id` ASC.\n\n### Tabla: `CustomerOrders`\n| order_id | customer_id | amount | order_date |\n| :--- | :--- | :--- | :--- |\n| 1 | 101 | 500.00 | 2023-01-15 |\n| 2 | 101 | 500.00 | 2023-02-20 |\n| 3 | 101 | 200.00 | 2023-03-01 |\n| 4 | 102 | 1200.00 | 2023-01-10 |\n| 5 | 102 | 800.00 | 2023-02-05 |\n| 6 | 103 | 350.00 | 2023-01-12 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS CustomerOrders;\nCREATE TABLE CustomerOrders (order_id INT PRIMARY KEY, customer_id INT, amount DECIMAL(10,2), order_date DATE);\n",
+    "seedDML": "\nINSERT INTO CustomerOrders VALUES \n(1, 101, 500.00, '2023-01-15'),\n(2, 101, 500.00, '2023-02-20'),\n(3, 101, 200.00, '2023-03-01'),\n(4, 102, 1200.00, '2023-01-10'),\n(5, 102, 800.00, '2023-02-05'),\n(6, 103, 350.00, '2023-01-12');\n",
+    "starterCode": "WITH RankedOrders AS (\n    SELECT \n        customer_id,\n        order_id,\n        amount,\n        order_date,\n        RANK() OVER (PARTITION BY ... ORDER BY ... DESC) AS rnk\n    FROM CustomerOrders\n)\nSELECT customer_id, order_id, amount, order_date\nFROM RankedOrders\nWHERE rnk = 1\nORDER BY customer_id, order_id;\n",
+    "solutionSQL": "\nWITH RankedOrders AS (\n    SELECT \n        customer_id, \n        order_id, \n        amount, \n        order_date,\n        RANK() OVER (PARTITION BY customer_id ORDER BY amount DESC) AS rnk\n    FROM CustomerOrders\n)\nSELECT customer_id, order_id, amount, order_date\nFROM RankedOrders\nWHERE rnk = 1\nORDER BY customer_id, order_id;\n",
+    "expectedColumns": [
+      "customer_id",
+      "order_id",
+      "amount",
+      "order_date"
+    ],
+    "orderMatters": true
+  },
+  {
+    "id": "window-7",
+    "topicId": "window_functions",
+    "title": "34. Comparativa de Rankings: ROW_NUMBER vs RANK vs DENSE_RANK",
+    "difficulty": "Easy",
+    "description": "\nPara dominar y visualizar la diferencia matemática exacta entre las tres funciones de ranking de SQL, calcula las tres simultáneamente para cada estudiante según su calificación (`score`).\nRetorna: `student_name`, `score`, `row_num`, `rank_num`, `dense_rank_num`.\n\n- Para `row_num`: desempata alfabéticamente por `student_name ASC` (`ORDER BY score DESC, student_name ASC`).\n- Para `rank_num`: ordena por `score DESC`.\n- Para `dense_rank_num`: ordena por `score DESC`.\n\nOrdena la consulta final por `score` DESC, `student_name` ASC.\n\n### Tabla: `ExamScores`\n| id | student_name | score |\n| :--- | :--- | :--- |\n| 1 | Alice | 100 |\n| 2 | Bob | 100 |\n| 3 | Charlie | 90 |\n| 4 | David | 85 |\n| 5 | Eva | 85 |\n| 6 | Frank | 70 |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS ExamScores;\nCREATE TABLE ExamScores (id INT PRIMARY KEY, student_name VARCHAR(50), score INT);\n",
+    "seedDML": "\nINSERT INTO ExamScores VALUES \n(1, 'Alice', 100),\n(2, 'Bob', 100),\n(3, 'Charlie', 90),\n(4, 'David', 85),\n(5, 'Eva', 85),\n(6, 'Frank', 70);\n",
+    "starterCode": "SELECT \n    student_name,\n    score,\n    ROW_NUMBER() OVER (...) AS row_num,\n    RANK() OVER (...) AS rank_num,\n    DENSE_RANK() OVER (...) AS dense_rank_num\nFROM ExamScores\nORDER BY score DESC, student_name ASC;\n",
+    "solutionSQL": "\nSELECT \n    student_name,\n    score,\n    ROW_NUMBER() OVER (ORDER BY score DESC, student_name ASC) AS row_num,\n    RANK() OVER (ORDER BY score DESC) AS rank_num,\n    DENSE_RANK() OVER (ORDER BY score DESC) AS dense_rank_num\nFROM ExamScores\nORDER BY score DESC, student_name ASC;\n",
+    "expectedColumns": [
+      "student_name",
+      "score",
+      "row_num",
+      "rank_num",
+      "dense_rank_num"
+    ],
+    "orderMatters": true
+  }
+]

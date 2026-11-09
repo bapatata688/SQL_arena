@@ -1,0 +1,32 @@
+{
+  "name": "sql-arena",
+  "version": "1.0.0",
+  "description": "Interactive SQL interview mastery platform & sandbox for LeetCode SQL 50 and HackerRank Advanced",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "dev:backend": "npm --prefix backend start",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "test:problems": "node backend/test_all_problems.js",
+    "test:security": "node backend/test_api_security.js",
+    "test:edge-cases": "node backend/test_curriculum_edge_cases.js",
+    "test:regression": "node backend/test_runner_regression.js",
+    "test:all": "node backend/test_all_problems.js && node backend/test_api_security.js && node backend/test_curriculum_edge_cases.js && node backend/test_runner_regression.js"
+  },
+  "keywords": [
+    "sql",
+    "mysql",
+    "leetcode",
+    "hackerrank",
+    "database",
+    "interview-preparation",
+    "data-engineering",
+    "react",
+    "monaco-editor",
+    "vite"
+  ],
+  "author": "Diego Alejandro Escobar Barahona",
+  "license": "MIT"
+}
