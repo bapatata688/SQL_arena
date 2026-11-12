@@ -561,5 +561,37 @@
       "dense_rank_num"
     ],
     "orderMatters": true
+  },
+  {
+    "id": "exists-1",
+    "topicId": "exists_predicates",
+    "title": "35. Clientes con Compras de Alto Valor (EXISTS / Semi-Join)",
+    "difficulty": "Easy",
+    "description": "\nEscribe una consulta SQL para reportar los clientes (`id`, `name`) que hayan realizado al menos una compra con un monto estrictamente mayor a 500 (`amount > 500`).\nCada cliente debe aparecer **a lo sumo una vez** en el resultado (sin filas duplicadas).\n\n### Tabla: `Customers`\n| id | name |\n| :--- | :--- |\n| 1 | Alice |\n| 2 | Bob |\n| 3 | Charlie |\n| 4 | David |\n\n### Tabla: `Purchases`\n| id | customer_id | amount | purchase_date |\n| :--- | :--- | :--- | :--- |\n| 101 | 1 | 750.00 | 2026-01-10 |\n| 102 | 1 | 900.00 | 2026-02-14 |\n| 103 | 2 | 250.00 | 2026-02-01 |\n| 104 | 4 | 500.01 | 2026-03-05 |\n| 105 | 4 | 150.00 | 2026-03-06 |\n\n### Formato de Salida\n| id | name |\n| :--- | :--- |\n| 1 | Alice |\n| 4 | David |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Purchases;\nDROP TABLE IF EXISTS Customers;\nCREATE TABLE Customers (id INT PRIMARY KEY, name VARCHAR(50));\nCREATE TABLE Purchases (id INT PRIMARY KEY, customer_id INT, amount DECIMAL(10, 2), purchase_date DATE);\n",
+    "seedDML": "\nINSERT INTO Customers VALUES \n(1, 'Alice'), \n(2, 'Bob'), \n(3, 'Charlie'), \n(4, 'David');\n\nINSERT INTO Purchases VALUES \n(101, 1, 750.00, '2026-01-10'),\n(102, 1, 900.00, '2026-02-14'),\n(103, 2, 250.00, '2026-02-01'),\n(104, 4, 500.01, '2026-03-05'),\n(105, 4, 150.00, '2026-03-06');\n",
+    "starterCode": "SELECT c.id, c.name\nFROM Customers c\nWHERE EXISTS (\n    SELECT 1\n    FROM Purchases p\n    WHERE ...\n);\n",
+    "solutionSQL": "\nSELECT c.id, c.name\nFROM Customers c\nWHERE EXISTS (\n    SELECT 1\n    FROM Purchases p\n    WHERE p.customer_id = c.id\n      AND p.amount > 500\n);\n",
+    "expectedColumns": [
+      "id",
+      "name"
+    ],
+    "orderMatters": false
+  },
+  {
+    "id": "exists-2",
+    "topicId": "exists_predicates",
+    "title": "36. Departamentos sin Empleados Activos (NOT EXISTS Anti-Join)",
+    "difficulty": "Medium",
+    "description": "\nReporta todos los departamentos (`dept_id`, `dept_name`) que **no** tengan ningún empleado asignado con estado `ACTIVE`.\nEsto incluye departamentos que no tengan ningún empleado, o departamentos cuyos empleados estén todos inactivos (`INACTIVE` u otro estado).\n\n> **Trampa de Entrevista:** Observa que en la tabla `Employees` puede haber empleados huérfanos con `department_id = NULL`. Tu consulta debe ser 100% inmune a la lógica trivalente de nulos (3VL).\n\n### Tabla: `Departments`\n| dept_id | dept_name |\n| :--- | :--- |\n| 10 | Engineering |\n| 20 | Sales |\n| 30 | Research |\n| 40 | Legal |\n\n### Tabla: `Employees`\n| emp_id | name | department_id | status |\n| :--- | :--- | :--- | :--- |\n| 1 | John | 10 | ACTIVE |\n| 2 | Sarah | 10 | INACTIVE |\n| 3 | Mike | 20 | INACTIVE |\n| 4 | Jessica | NULL | ACTIVE |\n\n### Formato de Salida\n| dept_id | dept_name |\n| :--- | :--- |\n| 20 | Sales |\n| 30 | Research |\n| 40 | Legal |\n",
+    "schemaDDL": "\nDROP TABLE IF EXISTS Employees;\nDROP TABLE IF EXISTS Departments;\nCREATE TABLE Departments (dept_id INT PRIMARY KEY, dept_name VARCHAR(50));\nCREATE TABLE Employees (emp_id INT PRIMARY KEY, name VARCHAR(50), department_id INT, status VARCHAR(20));\n",
+    "seedDML": "\nINSERT INTO Departments VALUES \n(10, 'Engineering'), \n(20, 'Sales'), \n(30, 'Research'), \n(40, 'Legal');\n\nINSERT INTO Employees VALUES \n(1, 'John', 10, 'ACTIVE'),\n(2, 'Sarah', 10, 'INACTIVE'),\n(3, 'Mike', 20, 'INACTIVE'),\n(4, 'Jessica', NULL, 'ACTIVE');\n",
+    "starterCode": "SELECT d.dept_id, d.dept_name\nFROM Departments d\nWHERE NOT EXISTS (\n    SELECT 1\n    FROM Employees e\n    WHERE ...\n);\n",
+    "solutionSQL": "\nSELECT d.dept_id, d.dept_name\nFROM Departments d\nWHERE NOT EXISTS (\n    SELECT 1\n    FROM Employees e\n    WHERE e.department_id = d.dept_id\n      AND e.status = 'ACTIVE'\n);\n",
+    "expectedColumns": [
+      "dept_id",
+      "dept_name"
+    ],
+    "orderMatters": false
   }
 ]

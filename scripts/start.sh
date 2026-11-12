@@ -23,3 +23,4 @@ echo "Press Ctrl+C to stop all processes."
 
 trap "kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true" EXIT
 wait
+

@@ -1,4 +1,4 @@
-﻿# ==============================================================================
+# ==============================================================================
 # SQL ARENA - ONE-CLICK LAUNCH SCRIPT (Windows PowerShell)
 # ==============================================================================
 
@@ -50,3 +50,4 @@ if (-not $frontendConn.TcpTestSucceeded) {
 
 Write-Host "`n✅ Plataforma lista: Abriendo http://localhost:3000 en el navegador..." -ForegroundColor Green
 Start-Process "http://localhost:3000"
+

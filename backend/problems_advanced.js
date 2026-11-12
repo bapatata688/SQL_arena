@@ -62,6 +62,185 @@ GROUP BY product;
 > **Pitfall:** \`ELSE 0\` en \`SUM\` evita NULL cuando no hay datos; en \`MAX\` de texto NO pongas ELSE.
 `
   }
+,
+  {
+    id: "exists_predicates",
+    title: "Predicados de Existencia: EXISTS, NOT EXISTS y SELECT 1",
+    badge: "Semi-Joins & Álgebra de Conjuntos",
+    icon: "CheckCircle2",
+    summary: "Domina la evaluación por cortocircuito (short-circuit), Semi-Joins y Anti-Joins en el optimizador CBO, el mito de SELECT 1 vs SELECT *, y la eliminación definitiva de la trampa 3VL de NOT IN.",
+    guide: `
+# 🎯 Predicados de Existencia: EXISTS, NOT EXISTS y el Mito de SELECT 1
+
+En el álgebra relacional de Edgar F. Codd, determinar la pertenencia o ausencia de una tupla en un conjunto relacionado es una de las operaciones más frecuentes y computacionalmente sensibles. A menudo los desarrolladores confunden semánticamente un \`INNER JOIN\` con un \`EXISTS\`, o un \`NOT IN\` con un \`NOT EXISTS\`, provocando duplicación inadvertida de registros (fan-out cartesiano), degradación a escaneos $O(N \\times M)$ o la pérdida total de resultados debido a la lógica trivalente (3VL). 
+
+Comprender la transformación física a **Semi-Joins** y **Anti-Joins** en el optimizador basado en costos (CBO) de MySQL 8.0 y desmitificar la convención de \`SELECT 1\` es esencial para el nivel Staff Data Engineer.
+
+---
+
+## 1. Fundamentos Teóricos y Procesamiento Lógico de Consultas (Logical Query Processing)
+
+### El Cuantificador Existencial Formal ($\\exists$)
+En lógica de predicados de primer orden, \`EXISTS\` modela directamente el cuantificador existencial:
+$$\\exists t \\in R \\quad \\text{tal que} \\quad P(t) = \\text{TRUE}$$
+
+A diferencia de las comparaciones escalares (\`=\`, \`<->\`, \`IN\`), \`EXISTS\` posee dos propiedades fundamentales en el estándar ANSI SQL:
+1. **Semántica Booleana Pura (Bivalente):**
+   \`EXISTS\` **NUNCA evalúa a \`UNKNOWN\`**. Retorna estrictamente:
+   - \`TRUE\`: Si la subconsulta produce al menos una tupla (incluso si esa tupla contiene únicamente valores \`NULL\`).
+   - \`FALSE\`: Si la subconsulta produce cero tuplas (conjunto vacío $\\emptyset$).
+2. **Evaluación por Cortocircuito (*Short-Circuit Evaluation*):**
+   El motor relacional no necesita materializar ni calcular la cardinalidad total de la subconsulta. En el instante exacto en que el motor localiza la primera tupla que satisface la condición correlacionada, la evaluación se interrumpe y retorna \`TRUE\` de inmediato.
+
+### Posición en el Pipeline Lógico
+En el orden lógico: \`FROM ➔ WHERE ➔ GROUP BY ➔ HAVING ➔ WINDOW ➔ SELECT ➔ DISTINCT ➔ ORDER BY ➔ LIMIT\`
+Cuando \`EXISTS\` reside en la cláusula \`WHERE\`, actúa como un predicado de filtrado correlacionado que evalúa cada tupla candidata de la consulta externa contra el espacio de búsqueda interior.
+
+---
+
+## 2. Modelos Mentales Visuales en Diagramas ASCII / Unicode
+
+### Comparativa de Evaluación: EXISTS vs IN vs JOIN
+\`\`\`text
+Consulta Externa: Cliente ID = 101
+
+[ INNER JOIN + DISTINCT ]:
+   Cliente 101 ───► Orden 1 ──┐
+               ───► Orden 2 ──┼──► Genera 3 tuplas intermedias ──► GROUP BY / Sort ──► Cliente 101
+               ───► Orden 3 ──┘   (Gasto de memoria + Filesort inútil)
+
+[ EXISTS (Short-Circuit) ]:
+   Cliente 101 ───► Orden 1 (¡MATCH!) ──► STOP INMEDIATO ──► Retorna TRUE ──► Cliente 101
+                    (Orden 2 y Orden 3 JAMÁS se leen)
+\`\`\`
+
+### El Mito Desarmado: SELECT 1 vs SELECT * vs SELECT NULL
+\`\`\`text
+┌─────────────────────────────────┬─────────────────────────────────────────────────────────┐
+│ Sintaxis en Subconsulta         │ Lo que cree el novato vs Lo que hace el Optimizador     │
+├─────────────────────────────────┼─────────────────────────────────────────────────────────┤
+│ EXISTS (SELECT 1 FROM ...)      │ Cree que ahorra I/O leyendo una constante "1".          │
+│ EXISTS (SELECT * FROM ...)      │ Teme que lea todas las columnas de la tabla.           │
+│ EXISTS (SELECT NULL FROM ...)   │ Cree que fallará por ser NULL.                          │
+├─────────────────────────────────┴─────────────────────────────────────────────────────────┤
+│ REALIDAD STAFF: En el AST (Abstract Syntax Tree), el motor descarta completamente la      │
+│ lista de proyección del SELECT. Solo verifica la presencia física de la tupla (puntero). │
+│ SELECT 1, SELECT * y SELECT NULL producen IDÉNTICO plan físico en MySQL 8.0.             │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+\`\`\`
+
+---
+
+## 3. Comportamiento Interno en MySQL 8.0 InnoDB y Query Planner
+
+### Transformación Física: De Subconsulta Correlacionada a Semi-Join
+En versiones antiguas de MySQL, las subconsultas correlacionadas se ejecutaban ingenuamente como bucles anidados dependientes ($O(N \\times M)$). En MySQL 8.0+, el optimizador reescribe internamente \`WHERE EXISTS (...)\` en un **Semi-Join**:
+Un Semi-Join es una reunión relacional que devuelve una fila de la tabla externa tan pronto como encuentra la primera coincidencia en la tabla interna, descartando la necesidad de deduplicación.
+
+### Estrategias de Ejecución en EXPLAIN FORMAT=TREE:
+1. **FirstMatch Strategy:** Escanea la tabla externa y para cada registro busca en el índice B+ Tree de la interna; al primer match se detiene y avanza a la siguiente fila externa (\`-> Semi-join (FirstMatch(c))\`).
+2. **LooseScan Strategy:** Si la tabla interna dispone de un índice adecuado, el motor recorre los valores únicos del índice sin leer filas duplicadas.
+3. **Materialization (Lookup / Scan):** Materializa la subconsulta en una tabla temporal hash en memoria (\`join_buffer_size\`) con clave primaria para deduplicación instantánea $O(1)$.
+
+### Anti-Join Físico: NOT EXISTS
+Cuando se evalúa \`NOT EXISTS\`, el optimizador implementa un **Anti-Join**. Si la tabla interna posee un índice sobre la clave de correlación, la búsqueda logarítmica $O(\\log M)$ descarta la fila externa si la clave existe en el B+ Tree, logrando un rendimiento casi idéntico al de un \`LEFT JOIN ... WHERE right.pk IS NULL\`.
+
+---
+
+## 4. Patrones de Producción y Modismos Canónicos (Staff Engineer Idioms)
+
+### 1. Semi-Join Canónico para Prevenir el Síndrome de Fan-Out
+Cuando necesitas atributos de la entidad principal sin alterar su cardinalidad:
+\`\`\`sql
+-- ✅ PATRÓN CANÓNICO: Retorna cada cliente UNA sola vez, sin importar cuántos pedidos tenga:
+SELECT c.id, c.name
+FROM Customers c
+WHERE EXISTS (
+    SELECT 1 
+    FROM Purchases p 
+    WHERE p.customer_id = c.id 
+      AND p.amount > 500
+);
+\`\`\`
+
+### 2. Anti-Join Canónico a Prueba de Nulos (Eliminación Definitiva de NOT IN)
+Para encontrar registros sin actividad o dependencias ausentes de forma 100% segura frente a valores nulos:
+\`\`\`sql
+-- ✅ BLINDADO CONTRA 3VL: Si en AuditLogs hay tuplas con user_id = NULL, NOT EXISTS sigue funcionando perfectamente:
+SELECT u.user_id, u.email
+FROM Users u
+WHERE NOT EXISTS (
+    SELECT 1 
+    FROM AuditLogs a 
+    WHERE a.user_id = u.user_id
+);
+\`\`\`
+
+### 3. Verificación de Dependencias Cruzadas Múltiples (Correlación Compleja)
+\`\`\`sql
+-- Clientes con pagos confirmados pero sin facturas emitidas:
+SELECT c.id, c.name
+FROM Customers c
+WHERE EXISTS (
+    SELECT 1 FROM Payments p 
+    WHERE p.customer_id = c.id AND p.status = 'CONFIRMED'
+)
+AND NOT EXISTS (
+    SELECT 1 FROM Invoices i 
+    WHERE i.customer_id = c.id
+);
+\`\`\`
+
+---
+
+## 5. Antipatrones Reales de Producción y Escenarios de Falla
+
+### Antipatrón 1: El Desastre del NOT IN Frente a Subconsultas con Nulos
+\`\`\`sql
+-- ❌ INCIDENTE CLÁSICO EN PRODUCCIÓN:
+-- Si existe UNA sola fila en InactiveAccounts donde account_id sea NULL,
+-- la consulta completa devuelve CERO registros de forma permanente y silenciosa.
+SELECT account_id, owner_name 
+FROM Accounts 
+WHERE account_id NOT IN (SELECT account_id FROM InactiveAccounts);
+
+-- 🔍 Demostración Matemática:
+-- id NOT IN (1, 2, NULL) ➔ NOT (id = 1 OR id = 2 OR id = NULL)
+-- ➔ NOT (FALSE OR FALSE OR UNKNOWN) ➔ NOT (UNKNOWN) ➔ UNKNOWN (DESCARTADA).
+
+-- ✅ REFACTORIZACIÓN STAFF CON NOT EXISTS:
+SELECT a.account_id, a.owner_name 
+FROM Accounts a
+WHERE NOT EXISTS (
+    SELECT 1 FROM InactiveAccounts ia WHERE ia.account_id = a.account_id
+);
+\`\`\`
+
+### Antipatrón 2: El Uso de JOIN + DISTINCT para Verificar Existencia
+\`\`\`sql
+-- ❌ ANTIPATRÓN DESTRUCTIVO DE MEMORIA:
+-- Si un cliente tiene 50,000 transacciones, el JOIN genera 50,000 filas en memoria
+-- solo para que DISTINCT las elimine mediante un filesort masivo en disco.
+SELECT DISTINCT c.id, c.name
+FROM Customers c
+JOIN Transactions t ON c.id = t.customer_id;
+
+-- ✅ REFACTORIZACIÓN STAFF CON EXISTS:
+-- Lee la primera transacción en B+ Tree y se detiene (cero memoria adicional).
+SELECT c.id, c.name
+FROM Customers c
+WHERE EXISTS (SELECT 1 FROM Transactions t WHERE t.customer_id = c.id);
+\`\`\`
+
+---
+
+## 6. Heurísticas Avanzadas para Entrevistas FAANG / HackerRank y Producción
+
+1. **La Regla de Oro del SELECT 1:** En entrevistas técnicas y revisiones de código, utiliza siempre \`SELECT 1\` dentro de \`EXISTS\`. Aunque el optimizador ignore la lista de proyección, comunica explícitamente al entrevistador: *"Sé que la proyección no importa; solo me interesa la existencia física de la tupla"*.
+2. **Regla de Proscripción de NOT IN:** Nunca uses \`NOT IN\` cuando la subconsulta apunte a una columna que permita nulos (\`nullable\`). Sustitúyelo de inmediato por \`NOT EXISTS\` o por un Anti-Join con \`LEFT JOIN ... WHERE right.pk IS NULL\`.
+3. **Índices en Claves de Correlación:** Para que \`EXISTS\` alcance latencia de microsegundos, la tabla interna en la subconsulta **debe** tener un índice B+ Tree sobre la columna correlacionada (clave foránea). Sin índice, el Semi-Join degradará a escaneos repetidos costosos.
+`
+  }
 ];
 
 export const advancedProblems = [
@@ -643,5 +822,138 @@ ORDER BY score DESC, student_name ASC;
     expectedColumns: ["student_name", "score", "row_num", "rank_num", "dense_rank_num"],
     orderMatters: true
   }
-];
+,
+  {
+    id: "exists-1",
+    topicId: "exists_predicates",
+    title: "35. Clientes con Compras de Alto Valor (EXISTS / Semi-Join)",
+    difficulty: "Easy",
+    description: `
+Escribe una consulta SQL para reportar los clientes (\`id\`, \`name\`) que hayan realizado al menos una compra con un monto estrictamente mayor a 500 (\`amount > 500\`).
+Cada cliente debe aparecer **a lo sumo una vez** en el resultado (sin filas duplicadas).
 
+### Tabla: \`Customers\`
+| id | name |
+| :--- | :--- |
+| 1 | Alice |
+| 2 | Bob |
+| 3 | Charlie |
+| 4 | David |
+
+### Tabla: \`Purchases\`
+| id | customer_id | amount | purchase_date |
+| :--- | :--- | :--- | :--- |
+| 101 | 1 | 750.00 | 2026-01-10 |
+| 102 | 1 | 900.00 | 2026-02-14 |
+| 103 | 2 | 250.00 | 2026-02-01 |
+| 104 | 4 | 500.01 | 2026-03-05 |
+| 105 | 4 | 150.00 | 2026-03-06 |
+
+### Formato de Salida
+| id | name |
+| :--- | :--- |
+| 1 | Alice |
+| 4 | David |
+`,
+    schemaDDL: `
+DROP TABLE IF EXISTS Purchases;
+DROP TABLE IF EXISTS Customers;
+CREATE TABLE Customers (id INT PRIMARY KEY, name VARCHAR(50));
+CREATE TABLE Purchases (id INT PRIMARY KEY, customer_id INT, amount DECIMAL(10, 2), purchase_date DATE);
+`,
+    seedDML: `
+INSERT INTO Customers VALUES 
+(1, 'Alice'), 
+(2, 'Bob'), 
+(3, 'Charlie'), 
+(4, 'David');
+
+INSERT INTO Purchases VALUES 
+(101, 1, 750.00, '2026-01-10'),
+(102, 1, 900.00, '2026-02-14'),
+(103, 2, 250.00, '2026-02-01'),
+(104, 4, 500.01, '2026-03-05'),
+(105, 4, 150.00, '2026-03-06');
+`,
+    starterCode: `SELECT c.id, c.name\nFROM Customers c\nWHERE EXISTS (\n    SELECT 1\n    FROM Purchases p\n    WHERE ...\n);\n`,
+    solutionSQL: `
+SELECT c.id, c.name
+FROM Customers c
+WHERE EXISTS (
+    SELECT 1
+    FROM Purchases p
+    WHERE p.customer_id = c.id
+      AND p.amount > 500
+);
+`,
+    expectedColumns: ["id", "name"],
+    orderMatters: false
+  },
+  {
+    id: "exists-2",
+    topicId: "exists_predicates",
+    title: "36. Departamentos sin Empleados Activos (NOT EXISTS Anti-Join)",
+    difficulty: "Medium",
+    description: `
+Reporta todos los departamentos (\`dept_id\`, \`dept_name\`) que **no** tengan ningún empleado asignado con estado \`ACTIVE\`.
+Esto incluye departamentos que no tengan ningún empleado, o departamentos cuyos empleados estén todos inactivos (\`INACTIVE\` u otro estado).
+
+> **Trampa de Entrevista:** Observa que en la tabla \`Employees\` puede haber empleados huérfanos con \`department_id = NULL\`. Tu consulta debe ser 100% inmune a la lógica trivalente de nulos (3VL).
+
+### Tabla: \`Departments\`
+| dept_id | dept_name |
+| :--- | :--- |
+| 10 | Engineering |
+| 20 | Sales |
+| 30 | Research |
+| 40 | Legal |
+
+### Tabla: \`Employees\`
+| emp_id | name | department_id | status |
+| :--- | :--- | :--- | :--- |
+| 1 | John | 10 | ACTIVE |
+| 2 | Sarah | 10 | INACTIVE |
+| 3 | Mike | 20 | INACTIVE |
+| 4 | Jessica | NULL | ACTIVE |
+
+### Formato de Salida
+| dept_id | dept_name |
+| :--- | :--- |
+| 20 | Sales |
+| 30 | Research |
+| 40 | Legal |
+`,
+    schemaDDL: `
+DROP TABLE IF EXISTS Employees;
+DROP TABLE IF EXISTS Departments;
+CREATE TABLE Departments (dept_id INT PRIMARY KEY, dept_name VARCHAR(50));
+CREATE TABLE Employees (emp_id INT PRIMARY KEY, name VARCHAR(50), department_id INT, status VARCHAR(20));
+`,
+    seedDML: `
+INSERT INTO Departments VALUES 
+(10, 'Engineering'), 
+(20, 'Sales'), 
+(30, 'Research'), 
+(40, 'Legal');
+
+INSERT INTO Employees VALUES 
+(1, 'John', 10, 'ACTIVE'),
+(2, 'Sarah', 10, 'INACTIVE'),
+(3, 'Mike', 20, 'INACTIVE'),
+(4, 'Jessica', NULL, 'ACTIVE');
+`,
+    starterCode: `SELECT d.dept_id, d.dept_name\nFROM Departments d\nWHERE NOT EXISTS (\n    SELECT 1\n    FROM Employees e\n    WHERE ...\n);\n`,
+    solutionSQL: `
+SELECT d.dept_id, d.dept_name
+FROM Departments d
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM Employees e
+    WHERE e.department_id = d.dept_id
+      AND e.status = 'ACTIVE'
+);
+`,
+    expectedColumns: ["dept_id", "dept_name"],
+    orderMatters: false
+  }
+];
