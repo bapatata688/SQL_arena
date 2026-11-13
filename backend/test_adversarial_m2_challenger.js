@@ -38,14 +38,14 @@ async function runChallengerM2Suite() {
 
   function record(category, testName, passed, details) {
     results.push({ category, testName, passed, details });
-    const mark = passed ? '✅ PASS' : '❌ FAIL';
+    const mark = passed ? 'PASS' : 'FAIL';
     console.log(`${mark} [${category}] ${testName}`);
     if (details) console.log(`   └─> ${details}`);
   }
 
   function recordFinding(category, testName, details) {
     findings.push({ category, testName, details });
-    console.log(`⚠️ FINDING [${category}] ${testName}`);
+    console.log(`FINDING [${category}] ${testName}`);
     if (details) console.log(`   └─> ${details}`);
   }
 

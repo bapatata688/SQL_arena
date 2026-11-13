@@ -20,7 +20,7 @@ async function runEdgeCaseTests() {
 
   function testPass(detail) {
     passedTests++;
-    console.log(`  ✅ PASS: ${detail}\n`);
+    console.log(`  PASS: ${detail}\n`);
   }
 
   const pNulls1 = allProblems.find(p => p.id === 'nulls-1');
@@ -203,6 +203,6 @@ async function runEdgeCaseTests() {
 }
 
 runEdgeCaseTests().catch(err => {
-  console.error('\n❌ VERIFICATION TEST FAILED:', err);
+  console.error('\nVERIFICATION TEST FAILED:', err);
   process.exit(1);
 });

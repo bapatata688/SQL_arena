@@ -4,7 +4,7 @@ Este directorio constituye la **Única Fuente de Verdad (Single Source of Truth 
 
 ---
 
-## 📁 Arquitectura del Harness
+## Arquitectura del Harness
 
 ```text
 apps/sql-arena/harness/
@@ -20,7 +20,7 @@ apps/sql-arena/harness/
 
 ---
 
-## 🛠️ Herramientas de Línea de Comandos (CLI)
+## Herramientas de Línea de Comandos (CLI)
 
 Desde la terminal en `apps/sql-arena`:
 
@@ -46,7 +46,7 @@ node harness/cli.js validate-all
 
 ---
 
-## 📖 Estándares del Currículum (Resumen Operativo)
+## Estándares del Currículum (Resumen Operativo)
 
 1. **Guías Teóricas:**
    - Todo módulo debe responder a la pregunta: *¿Cómo opera esto en las entrañas de InnoDB y el optimizador CBO?*

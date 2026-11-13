@@ -15,29 +15,29 @@ async function run() {
 
     case 'test-problem': {
       if (!arg) {
-        console.error('❌ Error: Debes especificar el ID del problema. Ej: node harness/cli.js test-problem rounding-1');
+        console.error('Error: Debes especificar el ID del problema. Ej: node harness/cli.js test-problem rounding-1');
         process.exit(1);
       }
       try {
         const res = await validateProblem(arg, { checkAdversarialEmpty: true });
         if (res.success) {
-          console.log(`\n✅ [PASS] Problema "${res.id}" validado correctamente.`);
+          console.log(`\n[PASS] Problema "${res.id}" validado correctamente.`);
           console.log(`   - Filas obtenidas: ${res.rowCount}`);
           console.log(`   - Latencia: ${res.executionTimeMs}ms`);
           if (res.warnings.length > 0) {
             console.log(`   - Advertencias:`);
-            res.warnings.forEach(w => console.log(`     ⚠️  ${w}`));
+            res.warnings.forEach(w => console.log(`      ${w}`));
           }
           console.log();
           process.exit(0);
         } else {
-          console.error(`\n❌ [FAIL] Problema "${res.id}" tiene errores de validación:`);
+          console.error(`\n[FAIL] Problema "${res.id}" tiene errores de validación:`);
           res.errors.forEach(e => console.error(`   - ${e}`));
           console.log();
           process.exit(1);
         }
       } catch (err) {
-        console.error(`\n❌ Error fatal al validar "${arg}":`, err.message, '\n');
+        console.error(`\nError fatal al validar "${arg}":`, err.message, '\n');
         process.exit(1);
       }
       break;
@@ -48,7 +48,7 @@ async function run() {
         const res = await validateAllProblems();
         process.exit(res.success ? 0 : 1);
       } catch (err) {
-        console.error('❌ Error fatal:', err.message);
+        console.error('Error fatal:', err.message);
         process.exit(1);
       }
       break;
@@ -56,7 +56,7 @@ async function run() {
 
     case 'validate-all': {
       console.log(`\n================================================================`);
-      console.log(`🚀 INICIANDO HARNESS COMPLETO DE CALIDAD (SSoT) EN SQL ARENA`);
+      console.log(`INICIANDO HARNESS COMPLETO DE CALIDAD (SSoT) EN SQL ARENA`);
       console.log(`================================================================\n`);
 
       const topicRes = validateTopics();
@@ -64,12 +64,12 @@ async function run() {
       try {
         problemRes = await validateAllProblems();
       } catch (err) {
-        console.error('❌ Error validando problemas:', err.message);
+        console.error('Error validando problemas:', err.message);
         process.exit(1);
       }
 
       console.log(`\n================================================================`);
-      console.log(`📊 REPORTE CONSOLIDADO DEL HARNESS`);
+      console.log(`REPORTE CONSOLIDADO DEL HARNESS`);
       console.log(`================================================================`);
       console.log(`• Guías Teóricas: ${topicRes.passedCount}/${topicRes.totalCount} Aprobadas`);
       console.log(`• Ejercicios Prácticos: ${problemRes.passCount}/${problemRes.results.length} Aprobados`);

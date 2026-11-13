@@ -17,7 +17,7 @@ const REQUIRED_SECTIONS = [
 
 export function validateTopics() {
   if (!fs.existsSync(TOPICS_PATH)) {
-    console.error(`❌ Error: topics.json no encontrado en: ${TOPICS_PATH}`);
+    console.error(`Error: topics.json no encontrado en: ${TOPICS_PATH}`);
     return { success: false, errors: [`Archivo no encontrado: ${TOPICS_PATH}`] };
   }
 
@@ -26,12 +26,12 @@ export function validateTopics() {
   try {
     topics = JSON.parse(rawData);
   } catch (err) {
-    console.error('❌ Error parseando JSON de topics:', err.message);
+    console.error('Error parseando JSON de topics:', err.message);
     return { success: false, errors: [err.message] };
   }
 
   console.log(`\n======================================================`);
-  console.log(`🔎 VALIDANDO GUÍAS TEÓRICAS STAFF DATA ENGINEER (${topics.length} temas)`);
+  console.log(`VALIDANDO GUÍAS TEÓRICAS STAFF DATA ENGINEER (${topics.length} temas)`);
   console.log(`======================================================\n`);
 
   let passedCount = 0;
@@ -72,13 +72,13 @@ export function validateTopics() {
     const isSuccess = topicErrors.length === 0;
     if (isSuccess) {
       passedCount++;
-      console.log(`✅ [PASS] ${topic.id.padEnd(16)}: "${topic.title}" (${(topic.guide || '').length} chars)`);
+      console.log(`[PASS] ${topic.id.padEnd(16)}: "${topic.title}" (${(topic.guide || '').length} chars)`);
       if (topicWarnings.length > 0) {
-        topicWarnings.forEach(w => console.log(`   ⚠️  Aviso: ${w}`));
+        topicWarnings.forEach(w => console.log(`    Aviso: ${w}`));
       }
     } else {
       totalErrors += topicErrors.length;
-      console.log(`❌ [FAIL] ${topic.id.padEnd(16)}: "${topic.title}"`);
+      console.log(`[FAIL] ${topic.id.padEnd(16)}: "${topic.title}"`);
       topicErrors.forEach(e => console.log(`   - Error: ${e}`));
     }
 

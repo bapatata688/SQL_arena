@@ -15,9 +15,9 @@ async function runCurriculumEdgeCaseSuite() {
     totalCount++;
     if (passed) {
       passedCount++;
-      console.log(`✅ [PASS] ${testName}`);
+      console.log(`[PASS] ${testName}`);
     } else {
-      console.error(`❌ [FAIL] ${testName}`);
+      console.error(`[FAIL] ${testName}`);
     }
     if (detail) {
       console.log(`   └─> ${detail}`);

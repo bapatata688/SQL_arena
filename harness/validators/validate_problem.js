@@ -135,7 +135,7 @@ export async function validateAllProblems() {
   }
   const problems = JSON.parse(fs.readFileSync(PROBLEMS_PATH, 'utf-8'));
   console.log(`\n======================================================`);
-  console.log(`🔎 VALIDANDO HARNESS DE EJERCICIOS PRACTICOS (${problems.length} problemas)`);
+  console.log(`VALIDANDO HARNESS DE EJERCICIOS PRACTICOS (${problems.length} problemas)`);
   console.log(`======================================================\n`);
 
   let passCount = 0;
@@ -147,13 +147,13 @@ export async function validateAllProblems() {
     results.push(res);
     if (res.success) {
       passCount++;
-      console.log(`✅ [PASS] ${res.id.padEnd(16)}: "${res.title}" (${res.rowCount} filas, ${res.executionTimeMs}ms)`);
+      console.log(`[PASS] ${res.id.padEnd(16)}: "${res.title}" (${res.rowCount} filas, ${res.executionTimeMs}ms)`);
       if (res.warnings.length > 0) {
-        res.warnings.forEach(w => console.log(`   ⚠️  Aviso: ${w}`));
+        res.warnings.forEach(w => console.log(`    Aviso: ${w}`));
       }
     } else {
       failCount++;
-      console.log(`❌ [FAIL] ${res.id.padEnd(16)}: "${res.title || prob.id}"`);
+      console.log(`[FAIL] ${res.id.padEnd(16)}: "${res.title || prob.id}"`);
       res.errors.forEach(e => console.log(`   - Error: ${e}`));
     }
   }
@@ -172,10 +172,10 @@ if (process.argv[1] && process.argv[1].endsWith('validate_problem.js')) {
     validateProblem(targetId, { checkAdversarialEmpty: true })
       .then(res => {
         if (res.success) {
-          console.log(`✅ [PASS] Problema "${res.id}" validado con éxito (${res.rowCount} filas, ${res.executionTimeMs}ms)`);
+          console.log(`[PASS] Problema "${res.id}" validado con éxito (${res.rowCount} filas, ${res.executionTimeMs}ms)`);
           process.exit(0);
         } else {
-          console.error(`❌ [FAIL] Problema "${res.id}" falló la validación:`);
+          console.error(`[FAIL] Problema "${res.id}" falló la validación:`);
           res.errors.forEach(e => console.error(`  - ${e}`));
           process.exit(1);
         }

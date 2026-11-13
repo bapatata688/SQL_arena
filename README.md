@@ -1,17 +1,17 @@
 <div align="center">
 
-# 🏛️ SQL Arena
+# SQL Arena
 
 **An Interactive, Sandboxed SQL Interview Mastery Platform for Data Engineers**
 
-**[🇺🇸 English](README.md) • [🇪🇸 Español](README.es.md)**
+**[English](README.md) • [Español](README.es.md)**
 
 [![MySQL 8.0+](https://img.shields.io/badge/MySQL-8.0%2B-00758F?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![React 19](https://img.shields.io/badge/React-19.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Node.js Express](https://img.shields.io/badge/Node.js-Express-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://expressjs.com/)
 [![Monaco Editor](https://img.shields.io/badge/Monaco_Editor-VS_Dark-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://microsoft.github.io/monaco-editor/)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind-CSS_v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Test Suite](https://img.shields.io/badge/Tests-138%2F138_Passing-success?style=for-the-badge&logo=checkmarx&logoColor=white)](#-test-suite--quality-gate)
+[![Test Suite](https://img.shields.io/badge/Tests-141%2F141_Passing-success?style=for-the-badge&logo=checkmarx&logoColor=white)](#-test-suite--quality-gate)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 *Engineered to bridge the gap between basic syntax and production-grade query mastery for **LeetCode SQL 50**, **HackerRank SQL (Intermediate & Advanced)**, and **Data Engineering Technical Interviews**.*
@@ -22,7 +22,7 @@
 
 ---
 
-## 📌 Overview
+## Overview
 
 **SQL Arena** is a full-stack, sandboxed SQL drill and evaluation platform built specifically for data engineers and analytics practitioners. Unlike superficial online sandboxes, SQL Arena runs on a dedicated local **MySQL 8.0+ engine** with an enterprise-grade execution runner, real-time visual diff diagnostics, an automated curriculum verification harness, and deep Staff-Engineer level pedagogical guides.
 
@@ -30,31 +30,31 @@ It was designed to systematically eliminate the subtle, high-impact pitfalls enc
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 flowchart TD
     subgraph Client ["Client Layer (Port 3000)"]
-        UI["⚛️ React 19 SPA"]
-        Editor["💻 Monaco SQL Editor\n(Hotkeys: Ctrl+Enter, Ctrl+Shift+Enter)"]
-        Guides["📖 Staff-Engineer Markdown Guides\n(ASCII Mental Models & Query Planner Internals)"]
-        DiffUI["🔍 Visual Diff Engine\n(Row, Column & Data Mismatch Highlights)"]
+        UI["React 19 SPA"]
+        Editor["Monaco SQL Editor\n(Hotkeys: Ctrl+Enter, Ctrl+Shift+Enter)"]
+        Guides["Staff-Engineer Markdown Guides\n(ASCII Mental Models & Query Planner Internals)"]
+        DiffUI["Visual Diff Engine\n(Row, Column & Data Mismatch Highlights)"]
     end
 
     subgraph Server ["Backend API & Sandbox Engine (Port 5000)"]
-        Express["🟢 Node.js / Express API"]
-        Mutex["🔒 ExecutionMutex\n(In-Memory Sequential Sandbox Resets)"]
-        Parser["🛡️ Lexical Statement Splitter\n(Anti-Injection, Single-Statement Gate)"]
-        Runner["⚡ Query Runner & Evaluator\n(Positional Matching, 5s Timeouts, 0-Row Fields)"]
-        Telem["📊 Telemetry & Progress Logger\n(Appends to sql_progress.txt & jsonl)"]
+        Express["Node.js / Express API"]
+        Mutex["ExecutionMutex\n(In-Memory Sequential Sandbox Resets)"]
+        Parser["Lexical Statement Splitter\n(Anti-Injection, Single-Statement Gate)"]
+        Runner["Query Runner & Evaluator\n(Positional Matching, 5s Timeouts, 0-Row Fields)"]
+        Telem["Telemetry & Progress Logger\n(Appends to sql_progress.txt & jsonl)"]
     end
 
     subgraph Harness ["Quality & Curriculum Harness (SSoT)"]
-        CLI["🛠️ harness/cli.js\n(Static Topic Linter & Dynamic Sandbox Validator)"]
+        CLI["harness/cli.js\n(Static Topic Linter & Dynamic Sandbox Validator)"]
     end
 
     subgraph Database ["Database Layer (Port 3306)"]
-        MySQL[("🐬 MySQL Server 8.0+\n(sql_arena_sandbox)")]
+        MySQL[("MySQL Server 8.0+\n(sql_arena_sandbox)")]
     end
 
     UI <-->|HTTP / JSON| Express
@@ -68,7 +68,7 @@ flowchart TD
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 ### 1. Hardened Sandbox Runner Engine
 - **In-Memory Concurrency Serialization (`ExecutionMutex`):** Serializes sandbox DDL/DML resets (`DROP/CREATE/INSERT`) to eliminate OS-level file handle collisions on Windows NTFS (`innodb_file_per_table=1`).
@@ -78,7 +78,7 @@ flowchart TD
 - **5-Second Hard Execution Timeout:** Intercepts runaway queries and infinite recursion loops via `SET SESSION max_execution_time = 5000` and `PROTOCOL_SEQUENCE_TIMEOUT`, returning clean `TIME_LIMIT_EXCEEDED` statuses.
 
 ### 2. Staff-Engineer Pedagogical Modules & SSoT Harness
-Each technical module is governed by a canonical 6-section specification validated via `harness/cli.js`:
+Each technical module follows a canonical 6-section specification, enforced by the `harness/cli.js lint-topics` linter (10 of 12 guides conform; the Recursive CTEs and Pivots guides are being upgraded):
 1. **Logical Query Processing & Formal Relational Algebra:** Clear pipelines detailing execution order and Codd's 3VL rules.
 2. **High-Fidelity ASCII Visual Mental Models:** Unicode diagrams illustrating window sliding frames, 3VL truth tables, and short-circuit semi-joins.
 3. **MySQL 8.0 InnoDB & Query Planner Internals:** Deep dives into B+ Tree index scans, Hash Joins, `join_buffer_size`, and SARGability.
@@ -93,7 +93,7 @@ Each technical module is governed by a canonical 6-section specification validat
 
 ---
 
-## 📚 Curriculum & Technical Domains
+## Curriculum & Technical Domains
 
 SQL Arena features **36 progressive exercises** across **12 core technical domains**:
 
@@ -114,22 +114,22 @@ SQL Arena features **36 progressive exercises** across **12 core technical domai
 
 ---
 
-## 🧪 Test Suite & Quality Gate
+## Test Suite & Quality Gate
 
-SQL Arena includes an adversarial testing battery and an automated curriculum harness (`harness/cli.js`) with **138 automated checks**:
+SQL Arena includes an adversarial testing battery and an automated curriculum harness (`harness/cli.js`) with **141 automated checks**:
 
 ```text
 ======================================================================
-SQL ARENA VERIFICATION BATTERY (138 / 138 TESTS PASSING)
+SQL ARENA VERIFICATION BATTERY (141 / 141 CHECKS PASSING)
 ======================================================================
-  ✅ test_all_problems.js                  36 / 36 PASS  (Curriculum solutions against MySQL)
-  ✅ test_adversarial_m1.js                28 / 28 PASS  (Syntax mutations, comments, injections)
-  ✅ test_curriculum_edge_cases.js         18 / 18 PASS  (Ties, non-consecutive IDs, UTF-8 bytes)
-  ✅ test_stress_challenger.js             15 / 15 PASS  (Concurrency bursts, timeout recovery)
-  ✅ test_adversarial_m2_challenger.js     12 / 12 PASS  (Parenthesized queries, whitespace)
-  ✅ test_edge_cases.js                    12 / 12 PASS  (0-row projection, BigNumber formatting)
-  ✅ test_api_security.js                  10 / 10 PASS  (CORS, rate limiting, payload limits)
-  ✅ test_runner_regression.js             10 / 10 PASS  (Positional matching, solution secrecy)
+  test_all_problems.js                 36 / 36 PASS  (Reference solutions against MySQL)
+  test_adversarial_m1.js               28 / 28 PASS  (Syntax mutations, comments, injections)
+  test_adversarial_m2_challenger.js    28 / 28 PASS  (Parenthesized queries, whitespace, edge findings)
+  test_curriculum_edge_cases.js        18 / 18 PASS  (Ties, non-consecutive IDs, UTF-8 bytes)
+  test_edge_cases.js                   10 / 10 PASS  (0-row projection, BigNumber formatting)
+  test_runner_regression.js             7 /  7 PASS  (Positional matching, solution secrecy)
+  test_api_security.js                  8 /  8 PASS  (Validation, size limits, rate limiting, stacked statements)
+  test_stress_challenger.js             6 /  6 PASS  (Concurrency bursts, timeout recovery)
 ======================================================================
 ```
 
@@ -147,7 +147,7 @@ node harness/cli.js validate-all
 
 ---
 
-## 🚀 Quickstart
+## Quickstart
 
 ### Prerequisites
 - **Node.js** (v18.0 or higher)
@@ -155,8 +155,8 @@ node harness/cli.js validate-all
 
 ### 1. Clone & Install Dependencies
 ```bash
-git clone https://github.com/bapatata688/sql-arena.git
-cd sql-arena
+git clone https://github.com/bapatata688/SQL_arena.git
+cd SQL_arena
 npm run install:all
 ```
 
@@ -201,7 +201,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## ⌨️ Editor Shortcuts
+## ⌨Editor Shortcuts
 
 | Shortcut | Action | Description |
 |---|---|---|
@@ -210,10 +210,10 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
-sql-arena/
+SQL_arena/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml             # GitHub Actions CI with MySQL 8.0 service container
@@ -251,19 +251,19 @@ sql-arena/
 
 ---
 
-## 👤 Author
+## Author
 
 **Diego Alejandro Escobar Barahona**  
 *Data Engineer & Cloud Specialist*  
 Soyapango, El Salvador  
 
-- 📜 **Certifications:** Google Cloud Certified — Associate Data Practitioner (ADP) • EF SET English C1 Advanced
-- 🐙 **GitHub:** [github.com/bapatata688](https://github.com/bapatata688)
-- 💼 **LinkedIn:** [linkedin.com/in/diego-escobar-459256394](https://www.linkedin.com/in/diego-escobar-459256394)
-- 📧 **Contact:** diegoalejandroescobarahona1@gmail.com
+- **Certifications:** Google Cloud Certified — Associate Data Practitioner (ADP) • EF SET English C1 Advanced
+- **GitHub:** [github.com/bapatata688](https://github.com/bapatata688)
+- **LinkedIn:** [linkedin.com/in/diego-escobar-459256394](https://www.linkedin.com/in/diego-escobar-459256394)
+- **Contact:** diegoalejandroescobarahona1@gmail.com
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the [MIT License](LICENSE).

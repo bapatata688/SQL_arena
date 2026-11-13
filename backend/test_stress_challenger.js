@@ -18,7 +18,7 @@ async function runChallengerStressTests() {
 
   function testPass(detail) {
     passedTests++;
-    console.log(`  ✅ PASS: ${detail}\n`);
+    console.log(`  PASS: ${detail}\n`);
   }
 
   const pNulls1 = allProblems.find(p => p.id === 'nulls-1');
@@ -241,6 +241,6 @@ async function runChallengerStressTests() {
 }
 
 runChallengerStressTests().catch(err => {
-  console.error('\n❌ CHALLENGER STRESS TEST FAILED:', err);
+  console.error('\nCHALLENGER STRESS TEST FAILED:', err);
   process.exit(1);
 });

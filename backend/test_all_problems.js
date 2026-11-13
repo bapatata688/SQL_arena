@@ -11,16 +11,16 @@ async function testAll() {
     try {
       const result = await executeQuery(problem, problem.solutionSQL, true);
       if (result.status === 'ACCEPTED') {
-        console.log(`✅ [PASS] ${problem.id}: ${problem.title} (${result.executionTimeMs}ms)`);
+        console.log(`[PASS] ${problem.id}: ${problem.title} (${result.executionTimeMs}ms)`);
         passed++;
       } else {
-        console.error(`❌ [FAIL] ${problem.id}: ${problem.title} -> status: ${result.status}`);
+        console.error(`[FAIL] ${problem.id}: ${problem.title} -> status: ${result.status}`);
         if (result.diff) console.error(JSON.stringify(result.diff, null, 2));
         if (result.error) console.error(result.error);
         failed++;
       }
     } catch (err) {
-      console.error(`💥 [ERROR] ${problem.id}: ${problem.title}`, err);
+      console.error(`[ERROR] ${problem.id}: ${problem.title}`, err);
       failed++;
     }
   }

@@ -80,22 +80,22 @@ SELECT ...
 
 ### Antipatrón 1: [Nombre de la Falla: Ej. La Trampa de NOT IN con Nulos]
 ```sql
--- ❌ BUG CRÍTICO EN PRODUCCIÓN:
+-- BUG CRÍTICO EN PRODUCCIÓN:
 SELECT ...;
 
--- 🔍 Demostración Matemática del Fallo:
+-- Demostración Matemática del Fallo:
 -- [Explicación paso a paso de por qué falla de forma silenciosa o degrada la base]
 
--- ✅ REFACTORIZACIÓN CANÓNICA STAFF ENGINEER:
+-- REFACTORIZACIÓN CANÓNICA STAFF ENGINEER:
 SELECT ...;
 ```
 
 ### Antipatrón 2: [Pérdida de SARGabilidad / Filesort en Disco]
 ```sql
--- ❌ NO SARGABLE (Degrada a Full Table Scan):
+-- NO SARGABLE (Degrada a Full Table Scan):
 SELECT ...;
 
--- ✅ SARGABLE (Aprovecha B+ Tree Range Scan):
+-- SARGABLE (Aprovecha B+ Tree Range Scan):
 SELECT ...;
 ```
 

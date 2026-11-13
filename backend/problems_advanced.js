@@ -9,7 +9,7 @@ export const advancedTopics = [
     icon: "Workflow",
     summary: "WITH RECURSIVE: caso ancla + caso recursivo para recorrer organigramas y generar series de números o fechas.",
     guide: `
-# 🔁 CTEs Recursivas
+# CTEs Recursivas
 
 Una CTE recursiva tiene **dos partes** unidas con \`UNION ALL\`:
 
@@ -44,7 +44,7 @@ SELECT n FROM nums;
     icon: "Table",
     summary: "Convertir filas en columnas con SUM(CASE WHEN ...) / MAX(CASE WHEN ...) y ROW_NUMBER para alinear filas.",
     guide: `
-# 🔄 Pivot: filas → columnas
+# Pivot: filas → columnas
 
 MySQL no tiene \`PIVOT\`. El patrón estándar es **agregación condicional**:
 
@@ -70,7 +70,7 @@ GROUP BY product;
     icon: "CheckCircle2",
     summary: "Domina la evaluación por cortocircuito (short-circuit), Semi-Joins y Anti-Joins en el optimizador CBO, el mito de SELECT 1 vs SELECT *, y la eliminación definitiva de la trampa 3VL de NOT IN.",
     guide: `
-# 🎯 Predicados de Existencia: EXISTS, NOT EXISTS y el Mito de SELECT 1
+# Predicados de Existencia: EXISTS, NOT EXISTS y el Mito de SELECT 1
 
 En el álgebra relacional de Edgar F. Codd, determinar la pertenencia o ausencia de una tupla en un conjunto relacionado es una de las operaciones más frecuentes y computacionalmente sensibles. A menudo los desarrolladores confunden semánticamente un \`INNER JOIN\` con un \`EXISTS\`, o un \`NOT IN\` con un \`NOT EXISTS\`, provocando duplicación inadvertida de registros (fan-out cartesiano), degradación a escaneos $O(N \\times M)$ o la pérdida total de resultados debido a la lógica trivalente (3VL). 
 
@@ -152,7 +152,7 @@ Cuando se evalúa \`NOT EXISTS\`, el optimizador implementa un **Anti-Join**. Si
 ### 1. Semi-Join Canónico para Prevenir el Síndrome de Fan-Out
 Cuando necesitas atributos de la entidad principal sin alterar su cardinalidad:
 \`\`\`sql
--- ✅ PATRÓN CANÓNICO: Retorna cada cliente UNA sola vez, sin importar cuántos pedidos tenga:
+-- PATRÓN CANÓNICO: Retorna cada cliente UNA sola vez, sin importar cuántos pedidos tenga:
 SELECT c.id, c.name
 FROM Customers c
 WHERE EXISTS (
@@ -166,7 +166,7 @@ WHERE EXISTS (
 ### 2. Anti-Join Canónico a Prueba de Nulos (Eliminación Definitiva de NOT IN)
 Para encontrar registros sin actividad o dependencias ausentes de forma 100% segura frente a valores nulos:
 \`\`\`sql
--- ✅ BLINDADO CONTRA 3VL: Si en AuditLogs hay tuplas con user_id = NULL, NOT EXISTS sigue funcionando perfectamente:
+-- BLINDADO CONTRA 3VL: Si en AuditLogs hay tuplas con user_id = NULL, NOT EXISTS sigue funcionando perfectamente:
 SELECT u.user_id, u.email
 FROM Users u
 WHERE NOT EXISTS (
@@ -197,18 +197,18 @@ AND NOT EXISTS (
 
 ### Antipatrón 1: El Desastre del NOT IN Frente a Subconsultas con Nulos
 \`\`\`sql
--- ❌ INCIDENTE CLÁSICO EN PRODUCCIÓN:
+-- INCIDENTE CLÁSICO EN PRODUCCIÓN:
 -- Si existe UNA sola fila en InactiveAccounts donde account_id sea NULL,
 -- la consulta completa devuelve CERO registros de forma permanente y silenciosa.
 SELECT account_id, owner_name 
 FROM Accounts 
 WHERE account_id NOT IN (SELECT account_id FROM InactiveAccounts);
 
--- 🔍 Demostración Matemática:
+-- Demostración Matemática:
 -- id NOT IN (1, 2, NULL) ➔ NOT (id = 1 OR id = 2 OR id = NULL)
 -- ➔ NOT (FALSE OR FALSE OR UNKNOWN) ➔ NOT (UNKNOWN) ➔ UNKNOWN (DESCARTADA).
 
--- ✅ REFACTORIZACIÓN STAFF CON NOT EXISTS:
+-- REFACTORIZACIÓN STAFF CON NOT EXISTS:
 SELECT a.account_id, a.owner_name 
 FROM Accounts a
 WHERE NOT EXISTS (
@@ -218,14 +218,14 @@ WHERE NOT EXISTS (
 
 ### Antipatrón 2: El Uso de JOIN + DISTINCT para Verificar Existencia
 \`\`\`sql
--- ❌ ANTIPATRÓN DESTRUCTIVO DE MEMORIA:
+-- ANTIPATRÓN DESTRUCTIVO DE MEMORIA:
 -- Si un cliente tiene 50,000 transacciones, el JOIN genera 50,000 filas en memoria
 -- solo para que DISTINCT las elimine mediante un filesort masivo en disco.
 SELECT DISTINCT c.id, c.name
 FROM Customers c
 JOIN Transactions t ON c.id = t.customer_id;
 
--- ✅ REFACTORIZACIÓN STAFF CON EXISTS:
+-- REFACTORIZACIÓN STAFF CON EXISTS:
 -- Lee la primera transacción en B+ Tree y se detiene (cero memoria adicional).
 SELECT c.id, c.name
 FROM Customers c

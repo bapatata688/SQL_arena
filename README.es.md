@@ -1,17 +1,17 @@
 <div align="center">
 
-# 🏛️ SQL Arena
+# SQL Arena
 
 **Plataforma Interactiva y Sandbox de Dominio de SQL para Entrevistas de Ingeniería de Datos**
 
-**[🇺🇸 English](README.md) • [🇪🇸 Español](README.es.md)**
+**[English](README.md) • [Español](README.es.md)**
 
 [![MySQL 8.0+](https://img.shields.io/badge/MySQL-8.0%2B-00758F?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![React 19](https://img.shields.io/badge/React-19.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Node.js Express](https://img.shields.io/badge/Node.js-Express-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://expressjs.com/)
 [![Monaco Editor](https://img.shields.io/badge/Monaco_Editor-VS_Dark-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://microsoft.github.io/monaco-editor/)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind-CSS_v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Test Suite](https://img.shields.io/badge/Tests-138%2F138_Passing-success?style=for-the-badge&logo=checkmarx&logoColor=white)](#-suite-de-pruebas-y-control-de-calidad)
+[![Test Suite](https://img.shields.io/badge/Tests-141%2F141_Passing-success?style=for-the-badge&logo=checkmarx&logoColor=white)](#-suite-de-pruebas-y-control-de-calidad)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 *Diseñada para cerrar la brecha entre la sintaxis básica y el dominio de consultas de nivel de producción para **LeetCode SQL 50**, **HackerRank SQL (Intermediate & Advanced)** y **Entrevistas Técnicas de Data Engineering**.*
@@ -22,7 +22,7 @@
 
 ---
 
-## 📌 Descripción General
+## Descripción General
 
 **SQL Arena** es una plataforma full-stack de entrenamiento y evaluación de SQL en entorno aislado (*sandbox*), construida específicamente para ingenieros de datos y especialistas en analítica. A diferencia de los entornos en línea superficiales, SQL Arena se ejecuta sobre un motor local dedicado de **MySQL 8.0+** con un evaluador de consultas determinista, diagnóstico visual de diferencias (*diff*) en tiempo real, un arnés (*harness*) automatizado de verificación curricular y guías pedagógicas de nivel Staff Data Engineer.
 
@@ -30,31 +30,31 @@ Fue diseñada para erradicar sistemáticamente las trampas técnicas más sutile
 
 ---
 
-## 🏗️ Arquitectura
+## Arquitectura
 
 ```mermaid
 flowchart TD
     subgraph Client ["Capa Cliente (Puerto 3000)"]
-        UI["⚛️ React 19 SPA"]
-        Editor["💻 Monaco SQL Editor\n(Atajos: Ctrl+Enter, Ctrl+Shift+Enter)"]
-        Guides["📖 Guías Markdown Staff-Engineer\n(Modelos Mentales ASCII e Internals del Planner)"]
-        DiffUI["🔍 Motor Visual de Diff\n(Resaltado de Filas, Columnas y Discrepancias)"]
+        UI["React 19 SPA"]
+        Editor["Monaco SQL Editor\n(Atajos: Ctrl+Enter, Ctrl+Shift+Enter)"]
+        Guides["Guías Markdown Staff-Engineer\n(Modelos Mentales ASCII e Internals del Planner)"]
+        DiffUI["Motor Visual de Diff\n(Resaltado de Filas, Columnas y Discrepancias)"]
     end
 
     subgraph Server ["Backend API & Motor Sandbox (Puerto 5000)"]
-        Express["🟢 Node.js / Express API"]
-        Mutex["🔒 ExecutionMutex\n(Serialización Secuencial en Memoria)"]
-        Parser["🛡️ Analizador Léxico de Sentencias\n(Anti-Inyección, Compuerta de Sentencia Única)"]
-        Runner["⚡ Ejecutor y Evaluador SQL\n(Validación Posicional, Timeout 5s, Esquema 0-Filas)"]
-        Telem["📊 Telemetría y Registro de Progreso\n(Escritura en sql_progress.txt & jsonl)"]
+        Express["Node.js / Express API"]
+        Mutex["ExecutionMutex\n(Serialización Secuencial en Memoria)"]
+        Parser["Analizador Léxico de Sentencias\n(Anti-Inyección, Compuerta de Sentencia Única)"]
+        Runner["Ejecutor y Evaluador SQL\n(Validación Posicional, Timeout 5s, Esquema 0-Filas)"]
+        Telem["Telemetría y Registro de Progreso\n(Escritura en sql_progress.txt & jsonl)"]
     end
 
     subgraph Harness ["Harness de Calidad y Currículum (SSoT)"]
-        CLI["🛠️ harness/cli.js\n(Linter Estático de Guías y Validador Dinámico)"]
+        CLI["harness/cli.js\n(Linter Estático de Guías y Validador Dinámico)"]
     end
 
     subgraph Database ["Capa de Base de Datos (Puerto 3306)"]
-        MySQL[("🐬 MySQL Server 8.0+\n(sql_arena_sandbox)")]
+        MySQL[("MySQL Server 8.0+\n(sql_arena_sandbox)")]
     end
 
     UI <-->|HTTP / JSON| Express
@@ -68,7 +68,7 @@ flowchart TD
 
 ---
 
-## ✨ Características Principales
+## Características Principales
 
 ### 1. Motor de Ejecución Sandbox Blindado
 - **Serialización de Concurrencia en Memoria (`ExecutionMutex`):** Encola y serializa los reinicios DDL/DML del sandbox (`DROP/CREATE/INSERT`) para eliminar colisiones de descriptores de archivos en Windows NTFS (`innodb_file_per_table=1`).
@@ -78,7 +78,7 @@ flowchart TD
 - **Timeout Estricto de 5 Segundos:** Intercepta consultas colgadas y bucles infinitos en CTEs recursivas mediante `SET SESSION max_execution_time = 5000`, devolviendo el estado controlado `TIME_LIMIT_EXCEEDED`.
 
 ### 2. Módulos Pedagógicos Nivel Staff Engineer & Harness SSoT
-Cada módulo técnico sigue una especificación canónica de 6 secciones validada mediante `harness/cli.js`:
+Cada módulo técnico sigue una especificación canónica de 6 secciones, verificada con el linter `harness/cli.js lint-topics` (10 de 12 guías cumplen; las de CTEs Recursivas y Pivots están en proceso de mejora):
 1. **Procesamiento Lógico de Consultas y Álgebra Relacional Formal:** Orden real de ejecución del motor y reglas de Lógica Trivalente (3VL) de Codd.
 2. **Modelos Mentales Visuales en ASCII:** Diagramas de cajas Unicode detallando marcos deslizantes de ventana, tablas de verdad 3VL y cortocircuitos en Semi-Joins.
 3. **Internals de MySQL 8.0 InnoDB y Query Planner:** Análisis profundo de árboles B+ Tree, Hash Joins en memoria (`join_buffer_size`) y SARGabilidad.
@@ -93,7 +93,7 @@ Cada módulo técnico sigue una especificación canónica de 6 secciones validad
 
 ---
 
-## 📚 Currículum y Dominios Técnicos
+## Currículum y Dominios Técnicos
 
 SQL Arena cuenta con **36 ejercicios progresivos** distribuidos en **12 dominios técnicos fundamentales**:
 
@@ -114,22 +114,22 @@ SQL Arena cuenta con **36 ejercicios progresivos** distribuidos en **12 dominios
 
 ---
 
-## 🧪 Suite de Pruebas y Control de Calidad
+## Suite de Pruebas y Control de Calidad
 
-SQL Arena cuenta con una batería de pruebas adversariales y un arnés de validación curricular (`harness/cli.js`) con **138 verificaciones automatizadas**:
+SQL Arena cuenta con una batería de pruebas adversariales y un arnés de validación curricular (`harness/cli.js`) con **141 verificaciones automatizadas**:
 
 ```text
 ======================================================================
-SQL ARENA VERIFICATION BATTERY (138 / 138 TESTS PASSING)
+SQL ARENA VERIFICATION BATTERY (141 / 141 CHECKS PASSING)
 ======================================================================
-  ✅ test_all_problems.js                  36 / 36 PASS  (Soluciones del currículum en MySQL)
-  ✅ test_adversarial_m1.js                28 / 28 PASS  (Mutaciones de sintaxis, comentarios, inyección)
-  ✅ test_curriculum_edge_cases.js         18 / 18 PASS  (Empates, IDs discontinuos, bytes UTF-8)
-  ✅ test_stress_challenger.js             15 / 15 PASS  (Ráfagas de concurrencia, recuperación de timeouts)
-  ✅ test_adversarial_m2_challenger.js     12 / 12 PASS  (Consultas con paréntesis, espacios en blanco)
-  ✅ test_edge_cases.js                    12 / 12 PASS  (Proyección 0-filas, formato BigNumber)
-  ✅ test_api_security.js                  10 / 10 PASS  (CORS, rate limiting, límite de payload)
-  ✅ test_runner_regression.js             10 / 10 PASS  (Orden posicional, ocultamiento de solución)
+  test_all_problems.js                 36 / 36 PASS  (Soluciones de referencia en MySQL)
+  test_adversarial_m1.js               28 / 28 PASS  (Mutaciones de sintaxis, comentarios, inyeccion)
+  test_adversarial_m2_challenger.js    28 / 28 PASS  (Consultas con parentesis, espacios, hallazgos de borde)
+  test_curriculum_edge_cases.js        18 / 18 PASS  (Empates, IDs discontinuos, bytes UTF-8)
+  test_edge_cases.js                   10 / 10 PASS  (Proyeccion 0-filas, formato BigNumber)
+  test_runner_regression.js             7 /  7 PASS  (Orden posicional, ocultamiento de solucion)
+  test_api_security.js                  8 /  8 PASS  (Validacion, limites de tamano, rate limiting, sentencias apiladas)
+  test_stress_challenger.js             6 /  6 PASS  (Rafagas de concurrencia, recuperacion de timeouts)
 ======================================================================
 ```
 
@@ -147,7 +147,7 @@ node harness/cli.js validate-all
 
 ---
 
-## 🚀 Inicio Rápido
+## Inicio Rápido
 
 ### Requisitos Previos
 - **Node.js** (v18.0 o superior)
@@ -155,8 +155,8 @@ node harness/cli.js validate-all
 
 ### 1. Clonar e Instalar Dependencias
 ```bash
-git clone https://github.com/bapatata688/sql-arena.git
-cd sql-arena
+git clone https://github.com/bapatata688/SQL_arena.git
+cd SQL_arena
 npm run install:all
 ```
 
@@ -201,7 +201,7 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 ---
 
-## ⌨️ Atajos del Editor
+## ⌨Atajos del Editor
 
 | Atajo | Acción | Descripción |
 |---|---|---|
@@ -210,10 +210,10 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 ---
 
-## 📂 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```text
-sql-arena/
+SQL_arena/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml             # Pipeline CI en GitHub Actions con contenedor MySQL 8.0
@@ -251,19 +251,19 @@ sql-arena/
 
 ---
 
-## 👤 Autor
+## Autor
 
 **Diego Alejandro Escobar Barahona**  
 *Data Engineer & Cloud Specialist*  
 Soyapango, El Salvador  
 
-- 📜 **Certificaciones:** Google Cloud Certified — Associate Data Practitioner (ADP) • EF SET English C1 Advanced
-- 🐙 **GitHub:** [github.com/bapatata688](https://github.com/bapatata688)
-- 💼 **LinkedIn:** [linkedin.com/in/diego-escobar-459256394](https://www.linkedin.com/in/diego-escobar-459256394)
-- 📧 **Contacto:** diegoalejandroescobarahona1@gmail.com
+- **Certificaciones:** Google Cloud Certified — Associate Data Practitioner (ADP) • EF SET English C1 Advanced
+- **GitHub:** [github.com/bapatata688](https://github.com/bapatata688)
+- **LinkedIn:** [linkedin.com/in/diego-escobar-459256394](https://www.linkedin.com/in/diego-escobar-459256394)
+- **Contacto:** diegoalejandroescobarahona1@gmail.com
 
 ---
 
-## 📄 Licencia
+## Licencia
 
 Este proyecto está distribuido bajo la [Licencia MIT](LICENSE).

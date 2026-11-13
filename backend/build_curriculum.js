@@ -14,7 +14,7 @@ const topics = [
     icon: "ShieldAlert",
     summary: "Domina la lógica trivalente de SQL (TRUE, FALSE, UNKNOWN), IFNULL vs COALESCE, trampas de agregación y anti-joins seguros.",
     guide: `
-# 🛡️ Manejo de Nulos y Lógica Trivalente en SQL
+# Manejo de Nulos y Lógica Trivalente en SQL
 
 En el modelo relacional formal de Edgar F. Codd, \`NULL\` **no es un valor**, ni un tipo de dato escalar, ni una cadena vacía (\`""\`), ni el número cero (\`0\`). Representa formalmente un marcador de estado: **ausencia de información o un valor desconocido (UNKNOWN)**. Tratar a los nulos con intuición booleana tradicional es una de las fuentes más graves de bugs silenciosos, cálculos financieros erróneos y pérdidas de rendimiento en bases de datos de producción.
 
@@ -100,7 +100,7 @@ El tratamiento de los valores nulos varía drásticamente según la etapa del pi
                                ▼
                      ¿Resultado es TRUE?
            ├── SÍ ──► Pasa a proyección / agregación
-           └── NO (FALSE o UNKNOWN) ──► 💥 DESCARTE SILENCIOSO DE LA FILA
+           └── NO (FALSE o UNKNOWN) ──► DESCARTE SILENCIOSO DE LA FILA
 \`\`\`
 
 ---
@@ -133,10 +133,10 @@ SELECT * FROM Customers WHERE referral_id <=> NULL;
 
 ### 2. \`COALESCE\` (Estándar ANSI) vs \`IFNULL\` (MySQL Propietario)
 \`\`\`sql
--- ✅ ESTÁNDAR ANSI: Evaluación perezosa (short-circuit) con N argumentos:
+-- ESTÁNDAR ANSI: Evaluación perezosa (short-circuit) con N argumentos:
 SELECT COALESCE(work_email, personal_email, fallback_email, 'no-reply@domain.com') AS contact;
 
--- ⚠️ MYSQL PROPIETARIO: Restringido estrictamente a 2 argumentos:
+-- MYSQL PROPIETARIO: Restringido estrictamente a 2 argumentos:
 SELECT IFNULL(commission_pct, 0.0) AS safe_commission;
 \`\`\`
 
@@ -167,19 +167,19 @@ WHERE s.account_id IS NULL;
 ### Antipatrón 1: La Trampa Fatal de \`NOT IN\` con Nulos
 Si la subconsulta ejecutada dentro de un operador \`NOT IN\` devuelve **un solo registro con valor \`NULL\`**, la consulta completa retornará **cero filas para siempre**, silenciando datos críticos de negocio:
 \`\`\`sql
--- ❌ BUG CRÍTICO EN PRODUCCIÓN:
+-- BUG CRÍTICO EN PRODUCCIÓN:
 -- Si Orders contiene un solo pedido huérfano con customer_id NULL, no devuelve nada:
 SELECT id, name FROM Customers 
 WHERE id NOT IN (SELECT customer_id FROM Orders);
 
--- 🔍 Demostración Matemática del Fallo:
+-- Demostración Matemática del Fallo:
 -- '105' NOT IN (101, 102, NULL)
 -- ➔ NOT ('105' = 101 OR '105' = 102 OR '105' = NULL)
 -- ➔ NOT (FALSE OR FALSE OR UNKNOWN)
 -- ➔ NOT (UNKNOWN) ➔ UNKNOWN
 -- Dado que UNKNOWN no es TRUE, la fila 105 es descartada. Esto ocurre para TODAS las filas.
 
--- ✅ SOLUCIÓN CANÓNICA STAFF ENGINEER (NOT EXISTS):
+-- SOLUCIÓN CANÓNICA STAFF ENGINEER (NOT EXISTS):
 SELECT c.id, c.name 
 FROM Customers c
 WHERE NOT EXISTS (
@@ -190,10 +190,10 @@ WHERE NOT EXISTS (
 ### Antipatrón 2: Contaminación Aritmética Silenciosa
 En SQL, cualquier cálculo aritmético donde intervenga un \`NULL\` produce inexorablemente \`NULL\`:
 \`\`\`sql
--- ❌ ERROR: Si bonus es NULL, total_comp resulta en NULL para todo el registro:
+-- ERROR: Si bonus es NULL, total_comp resulta en NULL para todo el registro:
 SELECT employee_id, base_salary + bonus AS total_comp FROM Payroll;
 
--- ✅ REFACTORIZACIÓN ROBUSTA:
+-- REFACTORIZACIÓN ROBUSTA:
 SELECT employee_id, base_salary + COALESCE(bonus, 0) AS total_comp FROM Payroll;
 \`\`\`
 
@@ -222,7 +222,7 @@ SELECT AVG(monto) FROM Ventas;        -- ➔ Retorna 150.00 ((100 + 200) / 2, ¡
     icon: "Calculator",
     summary: "Aprende ROUND, TRUNCATE, FLOOR, CEIL y la técnica de división segura con NULLIF para evitar errores fatales en métricas de negocio.",
     guide: `
-# 🔢 Operaciones Numéricas y Redondeo en SQL
+# Operaciones Numéricas y Redondeo en SQL
 
 En sistemas transaccionales, auditoría contable y pipelines de datos empresariales, los errores de redondeo acumulativo (*penny drift*) o una excepción no controlada por división por cero provocan discrepancias financieras graves y fallos críticos en producción. Comprender la representación física de los tipos de datos numéricos y el comportamiento del optimizador de MySQL 8.0 es esencial para diseñar consultas con precisión matemática determinista.
 
@@ -276,8 +276,8 @@ El estándar ANSI SQL y el motor InnoDB de MySQL implementan el tipo \`DECIMAL(M
                                 │
                                 ▼
         ¿División Entera o Forzado Decimal?
-        ├── ❌ 45 / 200 en motores estrictos ──► 0 (Pérdida total de datos)
-        └── ✅ 100.0 * 45 / 200 ──────────────► 22.5000 (Escala decimal preservada)
+        ├── 45 / 200 en motores estrictos ──► 0 (Pérdida total de datos)
+        └── 100.0 * 45 / 200 ──────────────► 22.5000 (Escala decimal preservada)
                                 │
                                 ▼
                         ROUND(..., 2)
@@ -313,10 +313,10 @@ Por ejemplo, un campo \`DECIMAL(18, 4)\` posee 14 dígitos enteros y 4 decimales
 ### Pérdida Crítica de SARGabilidad por Funciones Numéricas
 Envolver una columna indexada dentro de una función numérica destruye la capacidad de InnoDB de realizar un *Index Range Scan*:
 \`\`\`sql
--- ❌ NO SARGABLE (Full Table Scan O(N), invalida el índice en 'unit_price'):
+-- NO SARGABLE (Full Table Scan O(N), invalida el índice en 'unit_price'):
 SELECT * FROM Inventory WHERE ROUND(unit_price) = 15;
 
--- ✅ SARGABLE (Index Range Scan O(log N), recorre únicamente las hojas B-Tree pertinentes):
+-- SARGABLE (Index Range Scan O(log N), recorre únicamente las hojas B-Tree pertinentes):
 SELECT * FROM Inventory 
 WHERE unit_price >= 14.50 AND unit_price < 15.50;
 \`\`\`
@@ -378,24 +378,24 @@ FROM SavingsAccounts;
 ### Antipatrón 1: El Desastre del Redondeo Prematuro (*Cumulative Penny Drift*)
 Uno de los errores más costosos en software empresarial es aplicar \`ROUND()\` fila a fila antes de agregar:
 \`\`\`sql
--- ❌ ERROR GRAVE: Redondear antes de sumar acumula sesgo fraccionario:
+-- ERROR GRAVE: Redondear antes de sumar acumula sesgo fraccionario:
 SELECT SUM(ROUND(item_price * quantity, 2)) AS reported_revenue FROM OrderItems;
 
--- 🔍 Demostración del Descuadre en 1,000,000 de ítems:
+-- Demostración del Descuadre en 1,000,000 de ítems:
 -- Ítem A: 10.004 ➔ ROUND = 10.00 (pérdida de +0.004)
 -- Ítem B: 10.004 ➔ ROUND = 10.00 (pérdida de +0.004)
 -- Tras 10,000 filas, el libro contable pierde $40.00 dólares reales.
 
--- ✅ REGLA DE ORO DE PRODUCCIÓN: Sumar con precisión total y redondear al final:
+-- REGLA DE ORO DE PRODUCCIÓN: Sumar con precisión total y redondear al final:
 SELECT ROUND(SUM(item_price * quantity), 2) AS reported_revenue FROM OrderItems;
 \`\`\`
 
 ### Antipatrón 2: Comparación de Igualdad sobre Tipos Flotantes
 \`\`\`sql
--- ❌ BUG SILENCIOSO: Falla intermitentemente según la arquitectura del procesador:
+-- BUG SILENCIOSO: Falla intermitentemente según la arquitectura del procesador:
 SELECT * FROM Transactions WHERE float_amount = 99.95;
 
--- ✅ SOLUCIÓN CON TOLERANCIA ÉPSILON O MIGRACIÓN A DECIMAL:
+-- SOLUCIÓN CON TOLERANCIA ÉPSILON O MIGRACIÓN A DECIMAL:
 SELECT * FROM Transactions WHERE ABS(float_amount - 99.95) < 0.0001;
 \`\`\`
 
@@ -423,7 +423,7 @@ Declarar \`DECIMAL(5, 2)\` permite un valor máximo de \`999.99\`. Al procesar u
     icon: "Network",
     summary: "Diferencia crítica entre ON y WHERE en LEFT JOIN, joins de 3+ tablas, self-joins y optimización de predicados.",
     guide: `
-# 🔗 Joins Avanzados y Topologías Multitabla en SQL
+# Joins Avanzados y Topologías Multitabla en SQL
 
 En el álgebra relacional de Edgar F. Codd, los operadores de reunión (*Joins*) constituyen el núcleo algorítmico del lenguaje SQL. Dominar la mecánica interna de acoplamiento de tuplas, el **orden de procesamiento lógico** y las estrategias del optimizador de MySQL 8.0 (Nested Loop vs Hash Join) es lo que separa a un desarrollador promedio de un Staff Data Engineer capaz de diseñar arquitecturas analíticas que escalen a cientos de millones de registros sin colapsar la memoria del motor.
 
@@ -585,7 +585,7 @@ LEFT JOIN Employees mgr ON emp.manager_id = mgr.id;
 ### Antipatrón 1: La Catástrofe del Doble Fan-Out (Multiplicación Cartesiana)
 Ocurre cuando una tabla dimensional se une simultáneamente a dos o más tablas que mantienen una relación 1:N independiente:
 \`\`\`sql
--- ❌ BUG CRÍTICO EN FINANZAS:
+-- BUG CRÍTICO EN FINANZAS:
 -- Un Cliente tiene 5 Facturas (1:N) y 10 Tickets de Soporte (1:N).
 -- Al unirlos en una sola consulta plana, el join genera 5 * 10 = 50 filas!
 SELECT 
@@ -596,9 +596,9 @@ FROM Customers c
 LEFT JOIN Invoices i ON c.id = i.customer_id
 LEFT JOIN SupportTickets t ON c.id = t.customer_id
 GROUP BY c.id;
--- 💥 RESULTADO: ¡total_invoiced se multiplica por 10 y total_tickets se multiplica por 5!
+-- RESULTADO: ¡total_invoiced se multiplica por 10 y total_tickets se multiplica por 5!
 
--- ✅ PATRÓN DE ARQUITECTURA STAFF ENGINEER: Pre-agregación en CTEs independientes:
+-- PATRÓN DE ARQUITECTURA STAFF ENGINEER: Pre-agregación en CTEs independientes:
 WITH CustomerInvoices AS (
     SELECT customer_id, SUM(invoice_amount) AS total_invoiced
     FROM Invoices
@@ -629,7 +629,7 @@ Si un join produce duplicados no deseados debido a una clave foránea no única,
 \`\`\`sql
 -- Si users.code es VARCHAR(20) COLLATE utf8mb4_bin
 -- y audit.code es VARCHAR(20) COLLATE utf8mb4_0900_ai_ci:
--- 💥 MySQL no puede comparar las cadenas directamente por índice B-Tree.
+-- MySQL no puede comparar las cadenas directamente por índice B-Tree.
 -- Fuerza una conversión de collation fila por fila, degradando a Full Table Scan O(N*M).
 \`\`\`
 
@@ -649,7 +649,7 @@ Si un join produce duplicados no deseados debido a una clave foránea no única,
     icon: "Calendar",
     summary: "Manejo completo de DATE, DATETIME y TIMESTAMP: DATEDIFF, DATE_SUB/SUBDATE, rangos, LAST_DAY y la trampa de BETWEEN.",
     guide: `
-# 📅 Fechas, Marcas de Tiempo e Intervalos en MySQL
+# Fechas, Marcas de Tiempo e Intervalos en MySQL
 
 El modelado y filtrado temporal es uno de los temas con mayor tasa de reprobación en entrevistas técnicas de Data Engineering y una fuente inagotable de incidentes de producción. Desde la degradación catastrófica de índices B-Tree por pérdida de SARGabilidad hasta la pérdida silenciosa de transacciones al usar \`BETWEEN\` sobre marcas de tiempo (\`DATETIME\`), dominar la aritmética temporal de MySQL 8.0 es un requerimiento innegociable para el nivel Staff Engineer.
 
@@ -694,12 +694,12 @@ Cuando una columna almacena componentes de hora, minuto o microsegundo, filtrar 
 Una consulta es **SARGable** (*Search Argument Able*) cuando el motor puede usar un índice B+ Tree directamente sin evaluar funciones fila por fila. Envolver columnas temporales en funciones matemáticas o de extracción destruye la velocidad de ejecución:
 
 \`\`\`sql
--- ❌ NO SARGABLE: Fuerza un Full Table Scan O(N) leyendo millones de páginas:
+-- NO SARGABLE: Fuerza un Full Table Scan O(N) leyendo millones de páginas:
 SELECT * FROM Orders WHERE DATE(created_at) = '2026-10-31';
 SELECT * FROM Orders WHERE YEAR(created_at) = 2026 AND MONTH(created_at) = 10;
 SELECT * FROM Orders WHERE created_at LIKE '2026-10-31%';
 
--- ✅ 100% SARGABLE: Ejecuta un Index Range Scan O(log N) sobre el árbol B-Tree:
+-- 100% SARGABLE: Ejecuta un Index Range Scan O(log N) sobre el árbol B-Tree:
 SELECT * FROM Orders 
 WHERE created_at >= '2026-10-31 00:00:00' 
   AND created_at <  '2026-11-01 00:00:00';
@@ -761,11 +761,11 @@ WHERE login_time >= '2026-10-31 23:59:59' - INTERVAL 30 DAY
 
 ### Antipatrón 1: Asumir que "Un Mes" equivale a 30 Días
 \`\`\`sql
--- ❌ BUG FRECUENTE EN ANÁLISIS DE CHURN / RETENCIÓN:
+-- BUG FRECUENTE EN ANÁLISIS DE CHURN / RETENCIÓN:
 -- Restar 30 días produce desfases de calendario en febrero y meses de 31 días:
 SELECT * FROM Subscriptions WHERE expiration_date = user_created + INTERVAL 30 DAY;
 
--- ✅ FORMA CORRECTA BASADA EN CALENDARIO CIVIL:
+-- FORMA CORRECTA BASADA EN CALENDARIO CIVIL:
 SELECT * FROM Subscriptions WHERE expiration_date = user_created + INTERVAL 1 MONTH;
 \`\`\`
 
@@ -778,7 +778,7 @@ Si tu aplicación web opera en servidores con hora \`America/El_Salvador\` (UTC-
 
 ### Antipatrón 4: Tratar Fechas como Cadenas con \`LIKE\`
 \`\`\`sql
--- ❌ Provoca conversión implícita de tipo fecha a VARCHAR por cada fila, invalidando índices:
+-- Provoca conversión implícita de tipo fecha a VARCHAR por cada fila, invalidando índices:
 WHERE created_at LIKE '2026-10%';
 \`\`\`
 
@@ -840,7 +840,7 @@ FROM Orders;
     icon: "CopyCheck",
     summary: "DISTINCT vs GROUP BY y el patrón canónico empresarial con ROW_NUMBER() para conservar trazabilidad e idempotencia.",
     guide: `
-# ✂️ Deduplicación Analítica vs Física en Data Engineering
+# Deduplicación Analítica vs Física en Data Engineering
 
 En arquitecturas distribuidas, pipelines de captura de datos de cambio (*Change Data Capture - CDC*) e ingestas batch/streaming (Kafka, Datastream, BigQuery, MySQL), recibir registros duplicados no es una anomalía, sino una certeza inevitable regida por la semántica de entrega *at-least-once*. Un Staff Data Engineer debe dominar tanto la deduplicación analítica en capa de lectura (sin alterar el historial transaccional) como la deduplicación física (purgado DML seguro) con ordenamiento determinista y mínimo costo de cómputo.
 
@@ -981,19 +981,19 @@ RENAME TABLE CustomerAuditLog TO CustomerAuditLog_Old,
 
 ### Antipatrón 1: El Uso Inadecuado de \`RANK()\` o \`DENSE_RANK()\`
 \`\`\`sql
--- ❌ BUG GRAVE: Ante colisión exacta de updated_at, ambas filas reciben rn = 1:
+-- BUG GRAVE: Ante colisión exacta de updated_at, ambas filas reciben rn = 1:
 WITH BadDeduplication AS (
     SELECT *, RANK() OVER (PARTITION BY user_id ORDER BY updated_at DESC) AS rnk
     FROM UserLogins
 )
 SELECT * FROM BadDeduplication WHERE rnk = 1;
--- 💥 RESULTADO: Los duplicados sobreviven silenciosamente en la capa Silver/Gold!
+-- RESULTADO: Los duplicados sobreviven silenciosamente en la capa Silver/Gold!
 -- REGLA STAFF: Usa SIEMPRE ROW_NUMBER() para deduplicación estricta 1:1.
 \`\`\`
 
 ### Antipatrón 2: Creación de Registros "Frankenstein" con \`GROUP BY\`
 \`\`\`sql
--- ❌ ERROR COMÚN: Mezclar columnas de eventos temporales diferentes:
+-- ERROR COMÚN: Mezclar columnas de eventos temporales diferentes:
 SELECT 
     user_id,
     MAX(email) AS email,               -- Podría venir del evento de enero
@@ -1001,7 +1001,7 @@ SELECT
     MAX(updated_at) AS last_updated    -- Marca de tiempo de mayo
 FROM UserActivityLog
 GROUP BY user_id;
--- 💥 Genera un registro híbrido ficticio con datos que jamás coexistieron en la realidad!
+-- Genera un registro híbrido ficticio con datos que jamás coexistieron en la realidad!
 \`\`\`
 
 ---
@@ -1036,7 +1036,7 @@ FROM UserEventsStream;
     icon: "Type",
     summary: "CONCAT, CONCAT_WS, SUBSTRING, CHAR_LENGTH vs LENGTH, funciones de normalización y expresiones regulares.",
     guide: `
-# 🔤 Manipulación de Strings, Collation y Limpieza en MySQL 8.0
+# Manipulación de Strings, Collation y Limpieza en MySQL 8.0
 
 En la ingeniería de datos moderna, más del 40% del tiempo de cómputo en capas de ingestión y data wrangling se dedica a la normalización, tokenización, deduplicación y saneamiento de cadenas de texto. Comprender la distinción entre caracteres y bytes bajo la codificación \`utf8mb4\`, el impacto de los *collations* en la seguridad y el uso de expresiones regulares nativas de MySQL 8.0 distingue a un desarrollador junior de un Staff Engineer.
 
@@ -1055,8 +1055,8 @@ MySQL 8.0 utiliza por defecto el conjunto de caracteres **\`utf8mb4\`** (soporte
 ├───────────────────────────┼──────────────┼──────────────┼──────────────┤
 │ ASCII Estándar (0-127)    │ 1 byte       │ 'A', '7', '$'│ LENGTH('A') = 1              │
 │ Latinos con tilde / Ñ     │ 2 bytes      │ 'é', 'ñ', 'ü'│ LENGTH('é') = 2, CHAR_LEN = 1 │
-│ Símbolos orientales / CJK │ 3 bytes      │ '中', '文', '★'│ LENGTH('中') = 3, CHAR_LEN = 1 │
-│ Emojis / Planos Suplement.│ 4 bytes      │ '🚀', '🔥', '💻'│ LENGTH('🚀') = 4, CHAR_LEN = 1 │
+│ Símbolos orientales / CJK │ 3 bytes      │ '中', '文', ''│ LENGTH('中') = 3, CHAR_LEN = 1 │
+│ Emojis / Planos Suplement.│ 4 bytes      │ '', '', ''│ LENGTH('') = 4, CHAR_LEN = 1 │
 └───────────────────────────┴──────────────┴──────────────┴──────────────┘
 \`\`\`
 
@@ -1108,18 +1108,18 @@ SELECT 'admin' = 'ADMIN'; -- ➔ 1 (TRUE)
 SELECT 'cafe' = 'café';   -- ➔ 1 (TRUE)
 SELECT 'resume' = 'résumé'; -- ➔ 1 (TRUE)
 
--- 💥 VULNERABILIDAD: Un atacante podría registrar 'ADMIN' y colisionar con 'admin'!
--- ✅ FORMA SEGURA: Forzar intercalación binaria exacta (utf8mb4_bin):
+-- VULNERABILIDAD: Un atacante podría registrar 'ADMIN' y colisionar con 'admin'!
+-- FORMA SEGURA: Forzar intercalación binaria exacta (utf8mb4_bin):
 SELECT 'admin' = 'ADMIN' COLLATE utf8mb4_bin; -- ➔ 0 (FALSE)
 SELECT BINARY 'admin' = 'ADMIN';             -- ➔ 0 (FALSE)
 \`\`\`
 
 ### Pérdida de SARGabilidad al Normalizar Cadenas
 \`\`\`sql
--- ❌ NO SARGABLE (Full Table Scan O(N), descarta el índice B-Tree sobre 'email'):
+-- NO SARGABLE (Full Table Scan O(N), descarta el índice B-Tree sobre 'email'):
 SELECT * FROM Users WHERE LOWER(email) = 'diego@domain.com';
 
--- ✅ SARGABLE: Si la columna ya es ci (case-insensitive), compara directamente:
+-- SARGABLE: Si la columna ya es ci (case-insensitive), compara directamente:
 SELECT * FROM Users WHERE email = 'diego@domain.com';
 \`\`\`
 
@@ -1129,10 +1129,10 @@ SELECT * FROM Users WHERE email = 'diego@domain.com';
 
 ### 1. \`CONCAT\` vs \`CONCAT_WS\` (Con Separador y Nulo-Seguro)
 \`\`\`sql
--- ❌ CONCAT ordinario: Si un solo valor es NULL, destruye toda la cadena retornando NULL:
+-- CONCAT ordinario: Si un solo valor es NULL, destruye toda la cadena retornando NULL:
 SELECT CONCAT(first_name, ' ', middle_name, ' ', last_name) AS full_name FROM Users;
 
--- ✅ CONCAT_WS: Define el separador en el primer argumento e IGNORA automáticamente los nulos:
+-- CONCAT_WS: Define el separador en el primer argumento e IGNORA automáticamente los nulos:
 SELECT CONCAT_WS(' ', first_name, middle_name, last_name) AS full_name FROM Users;
 \`\`\`
 
@@ -1191,10 +1191,10 @@ En MySQL, el tipo de longitud fija \`CHAR(N)\` rellena automáticamente con espa
 
 ### Antipatrón 2: Búsqueda con Comodín Inicial (\`LIKE '%termino'\`)
 \`\`\`sql
--- ❌ INEFICIENTE: Un comodín '%' al inicio del patrón impide usar el índice B-Tree:
+-- INEFICIENTE: Un comodín '%' al inicio del patrón impide usar el índice B-Tree:
 SELECT * FROM Customers WHERE email LIKE '%@gmail.com'; -- Full Table Scan O(N)
 
--- ✅ ALTERNATIVA DE ARQUITECTURA:
+-- ALTERNATIVA DE ARQUITECTURA:
 -- Para sufijos fijos recurrentes, almacena el dominio en una columna separada indexada,
 -- o utiliza una columna generada con Reverse: WHERE email_domain = 'gmail.com'.
 \`\`\`
@@ -1224,7 +1224,7 @@ Si una columna se definió como \`VARCHAR(10)\` bajo \`latin1\` (1 byte por cara
     icon: "Layers",
     summary: "Estructura WITH, CTEs encadenadas y dependientes, descomposición de pipelines de datos y rendimiento.",
     guide: `
-# 🧱 Common Table Expressions (CTEs) y Chained Pipelines en MySQL 8.0
+# Common Table Expressions (CTEs) y Chained Pipelines en MySQL 8.0
 
 En la ingeniería de analítica moderna y herramientas de transformación de datos (dbt, Dataform, pipelines ELT), las **Common Table Expressions (CTEs)** representan el cambio de paradigma más significativo para abandonar el código SQL monolítico y adoptar una **Arquitectura de Pipelines en Capas**. Diseñar consultas como un Grafo Acíclico Dirigido (DAG) desacoplado, modular y depurable es una habilidad distintiva de un Staff Engineer.
 
@@ -1394,26 +1394,26 @@ Una CTE **no persiste en el catálogo de base de datos** ni sobrevive a sentenci
 
 ### Antipatrón 1: La "God-CTE" Monolítica
 \`\`\`sql
--- ❌ ANTIPATRÓN: Crear una CTE gigantesca de 150 líneas que realiza 8 joins,
+-- ANTIPATRÓN: Crear una CTE gigantesca de 150 líneas que realiza 8 joins,
 -- 4 agregaciones y 3 transformaciones de strings a la vez.
 -- Consecuencia: Imposible de depurar, destruye la modularidad y confunde al optimizador de costos.
--- ✅ REGLA STAFF: Cada CTE debe responder a una sola pregunta relacional concreta.
+-- REGLA STAFF: Cada CTE debe responder a una sola pregunta relacional concreta.
 \`\`\`
 
 ### Antipatrón 2: Materialización Prematura de Millones de Filas
 \`\`\`sql
--- ❌ ERROR CRÍTICO: No filtrar dentro de la CTE inicial:
+-- ERROR CRÍTICO: No filtrar dentro de la CTE inicial:
 WITH AllEvents AS (
     SELECT * FROM Logs -- ➔ Materializa 50 millones de filas en memoria/disco!
 )
 SELECT * FROM AllEvents WHERE event_date = '2026-10-31';
 
--- ✅ REGLA INNEGOCIABLE: Filtra siempre en la primera capa para minimizar cardinalidad.
+-- REGLA INNEGOCIABLE: Filtra siempre en la primera capa para minimizar cardinalidad.
 \`\`\`
 
 ### Antipatrón 3: CTEs Pasamanos Inútiles (Pass-Through CTEs)
 \`\`\`sql
--- ❌ ANTIPATRÓN: Declarar CTEs que solo hacen SELECT * sin transformación alguna:
+-- ANTIPATRÓN: Declarar CTEs que solo hacen SELECT * sin transformación alguna:
 WITH raw_customers AS (SELECT * FROM Customers) ... -- Agrega overhead sintáctico sin valor.
 \`\`\`
 
@@ -1433,7 +1433,7 @@ WITH raw_customers AS (SELECT * FROM Customers) ... -- Agrega overhead sintácti
     icon: "FolderTree",
     summary: "Subconsultas escalares, derivadas en FROM, predicados IN / EXISTS y el costo de las subconsultas correlacionadas.",
     guide: `
-# 🔍 Subconsultas (Subqueries), Semi-Joins y Optimizador en MySQL 8.0
+# Subconsultas (Subqueries), Semi-Joins y Optimizador en MySQL 8.0
 
 Las subconsultas constituyen uno de los constructos más expresivos del álgebra relacional en SQL, pero al mismo tiempo representan una de las mayores fuentes de regresiones de rendimiento si no se comprende cómo el optimizador de costos (CBO) de MySQL 8.0 las descorrelaciona o reescribe en transformaciones de **Semi-Join** y **Anti-Join**.
 
@@ -1555,7 +1555,7 @@ Aunque conceptualmente \`salary > ALL (SELECT salary FROM ...)\` y \`salary > (S
 
 ### Antipatrón 1: Subconsulta Escalar en la Lista del \`SELECT\` (El Problema N+1 Interno)
 \`\`\`sql
--- ❌ GRAVE ANTIPATRÓN EN PRODUCCIÓN:
+-- GRAVE ANTIPATRÓN EN PRODUCCIÓN:
 SELECT 
     e.id, 
     e.name,
@@ -1564,7 +1564,7 @@ FROM Employees e;
 -- Consecuencia: El motor dispara una lectura por cada empleado individual.
 -- Si Employees tiene 100,000 registros, ejecuta 100,001 consultas conceptuales.
 
--- ✅ SOLUCIÓN CANÓNICA STAFF: LEFT JOIN con pre-agregación en CTE o GROUP BY:
+-- SOLUCIÓN CANÓNICA STAFF: LEFT JOIN con pre-agregación en CTE o GROUP BY:
 SELECT 
     e.id, 
     e.name, 
@@ -1580,13 +1580,13 @@ LEFT JOIN (
 ### Antipatrón 2: La Trampa de \`NOT IN\` con Valores \`NULL\` en Subconsultas
 Si la subconsulta ejecutada por \`NOT IN\` contiene al menos un valor nulo, la condición completa evalúa a \`UNKNOWN\` para todas las tuplas externas:
 \`\`\`sql
--- ❌ FALLO SILENCIOSO EN PRODUCCIÓN:
+-- FALLO SILENCIOSO EN PRODUCCIÓN:
 -- Si un cliente nunca realizó órdenes y en la tabla Orders hay un registro con customer_id NULL:
 SELECT customer_id, name FROM Customers 
 WHERE customer_id NOT IN (SELECT customer_id FROM Orders);
 -- ➔ Retorna 0 filas vacías, ignorando a clientes válidos sin pedidos.
 
--- ✅ REFACTORIZACIÓN ROBUSTA CON NOT EXISTS:
+-- REFACTORIZACIÓN ROBUSTA CON NOT EXISTS:
 SELECT c.customer_id, c.name FROM Customers c
 WHERE NOT EXISTS (
     SELECT 1 FROM Orders o WHERE o.customer_id = c.customer_id
@@ -1613,7 +1613,7 @@ Anidar subconsultas dentro de subconsultas a más de 3 niveles destruye la capac
     icon: "Trophy",
     summary: "Anatomía de OVER(), ROW_NUMBER vs RANK vs DENSE_RANK, funciones de navegación LAG/LEAD y marcos de ventana ROWS BETWEEN.",
     guide: `
-# 🏆 Window Functions (El Corazón de SQL Avanzado) en MySQL 8.0
+# Window Functions (El Corazón de SQL Avanzado) en MySQL 8.0
 
 Las **Window Functions** (incorporadas formalmente en el estándar ANSI SQL:2003 y disponibles nativamente en MySQL desde la versión 8.0) representan la evolución técnica más potente del lenguaje SQL. Permiten calcular métricas contextuales, acumulados móviles, rankings y desfases temporales **sin colapsar la granularidad de las tuplas individuales**, resolviendo en tiempo lineal $O(N \log N)$ problemas que antes requerían auto-uniones cuadráticas $O(N^2)$ o cursores lentos.
 
@@ -1642,10 +1642,10 @@ En la arquitectura del optimizador de MySQL, las etapas se evalúan en una secue
 ### La Consecuencia Innegociable: Prohibición en \`WHERE\` y \`HAVING\`
 Debido a que las funciones de ventana se ejecutan en el **Paso 5** (después de \`WHERE\` en el Paso 2 y \`HAVING\` en el Paso 4), **es sintácticamente imposible colocar una función de ventana directamente en \`WHERE\` o \`HAVING\`**:
 \`\`\`sql
--- ❌ ERROR SINTÁCTICO FATAL EN MYSQL:
+-- ERROR SINTÁCTICO FATAL EN MYSQL:
 SELECT name, salary FROM Employees WHERE ROW_NUMBER() OVER (...) = 1;
 
--- ✅ REGLA DE ORO STAFF ENGINEER: Encapsular obligatoriamente en una CTE o Derived Table:
+-- REGLA DE ORO STAFF ENGINEER: Encapsular obligatoriamente en una CTE o Derived Table:
 WITH RankedSalaries AS (
     SELECT name, salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS rnk
     FROM Employees

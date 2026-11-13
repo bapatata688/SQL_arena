@@ -19,7 +19,14 @@ jobs:
           MYSQL_DATABASE: sql_arena_sandbox
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=10
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ''
+      DB_NAME: sql_arena_sandbox
 
     steps:
       - name: Checkout Code
@@ -40,20 +47,39 @@ jobs:
       - name: Install Frontend Dependencies
         run: cd frontend && npm ci
 
+      - name: Start Backend API (required by HTTP-level tests)
+        run: |
+          cd backend
+          nohup node server.js > server.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:5000/api/topics > /dev/null; then
+              echo "Backend API is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Backend API failed to start"
+          cat server.log
+          exit 1
+
       - name: Run Backend Test Suites
-        env:
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_USER: root
-          DB_PASSWORD: ''
-          DB_NAME: sql_arena_sandbox
         run: |
           cd backend
           node test_all_problems.js
           node test_api_security.js
           node test_curriculum_edge_cases.js
           node test_runner_regression.js
+          node test_adversarial_m1.js
+          node test_adversarial_m2_challenger.js
+          node test_edge_cases.js
+          node test_stress_challenger.js
+
+      - name: Validate Exercises with Curriculum Harness
+        run: node harness/cli.js test-all-problems
 
       - name: Build Frontend Application
         run: cd frontend && npm run build
 
+      - name: Print Backend Log on Failure
+        if: failure()
+        run: cat backend/server.log || true

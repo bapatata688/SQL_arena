@@ -20,7 +20,7 @@ async function runAdversarialSuite() {
 
   function record(category, testName, passed, details) {
     results.push({ category, testName, passed, details });
-    const mark = passed ? '✅ PASS' : '❌ FAIL';
+    const mark = passed ? 'PASS' : 'FAIL';
     console.log(`${mark} [${category}] ${testName}`);
     if (details) console.log(`   └─> ${details}`);
   }
@@ -407,7 +407,7 @@ async function runAdversarialSuite() {
       id: 'alias-test',
       title: 'Alias Unicode Test',
       solutionSQL: 'SELECT 1 AS `año`, 2 AS `población`, 3 AS `🚀`;',
-      expectedColumns: ['año', 'población', '🚀'],
+      expectedColumns: ['año', 'población', ''],
       orderMatters: false
     };
     try {
@@ -467,7 +467,7 @@ async function runAdversarialSuite() {
   if (failed > 0) {
     console.log('FAILURES BREAKDOWN:');
     for (const f of results.filter(r => !r.passed)) {
-      console.log(`❌ [${f.category}] ${f.testName}`);
+      console.log(`[${f.category}] ${f.testName}`);
       console.log(`   └─> ${f.details}`);
     }
   }

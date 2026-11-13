@@ -34,13 +34,13 @@ export function logSubmission(submission) {
   const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
   let statusEmoji;
   if (submission.status === 'ACCEPTED') {
-    statusEmoji = '✅ ACCEPTED';
+    statusEmoji = 'ACCEPTED';
   } else if (submission.status === 'WRONG_ANSWER') {
-    statusEmoji = '❌ WRONG_ANSWER';
+    statusEmoji = 'WRONG_ANSWER';
   } else if (submission.status === 'TIME_LIMIT_EXCEEDED') {
-    statusEmoji = '⏱️ TIME_LIMIT_EXCEEDED';
+    statusEmoji = 'TIME_LIMIT_EXCEEDED';
   } else {
-    statusEmoji = `⚠️ ${submission.status || 'ERROR'}`;
+    statusEmoji = `${submission.status || 'ERROR'}`;
   }
 
   // Format for sql_progress.txt
