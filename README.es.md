@@ -78,7 +78,7 @@ flowchart TD
 - **Timeout Estricto de 5 Segundos:** Intercepta consultas colgadas y bucles infinitos en CTEs recursivas mediante `SET SESSION max_execution_time = 5000`, devolviendo el estado controlado `TIME_LIMIT_EXCEEDED`.
 
 ### 2. Módulos Pedagógicos Nivel Staff Engineer & Harness SSoT
-Cada módulo técnico sigue una especificación canónica de 6 secciones, verificada con el linter `harness/cli.js lint-topics` (10 de 12 guías cumplen; las de CTEs Recursivas y Pivots están en proceso de mejora):
+Cada módulo técnico sigue una especificación canónica de 6 secciones, verificada con el linter `harness/cli.js lint-topics` (las 12 guías cumplen):
 1. **Procesamiento Lógico de Consultas y Álgebra Relacional Formal:** Orden real de ejecución del motor y reglas de Lógica Trivalente (3VL) de Codd.
 2. **Modelos Mentales Visuales en ASCII:** Diagramas de cajas Unicode detallando marcos deslizantes de ventana, tablas de verdad 3VL y cortocircuitos en Semi-Joins.
 3. **Internals de MySQL 8.0 InnoDB y Query Planner:** Análisis profundo de árboles B+ Tree, Hash Joins en memoria (`join_buffer_size`) y SARGabilidad.

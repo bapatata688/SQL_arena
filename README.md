@@ -78,7 +78,7 @@ flowchart TD
 - **5-Second Hard Execution Timeout:** Intercepts runaway queries and infinite recursion loops via `SET SESSION max_execution_time = 5000` and `PROTOCOL_SEQUENCE_TIMEOUT`, returning clean `TIME_LIMIT_EXCEEDED` statuses.
 
 ### 2. Staff-Engineer Pedagogical Modules & SSoT Harness
-Each technical module follows a canonical 6-section specification, enforced by the `harness/cli.js lint-topics` linter (10 of 12 guides conform; the Recursive CTEs and Pivots guides are being upgraded):
+Each technical module follows a canonical 6-section specification, enforced by the `harness/cli.js lint-topics` linter (all 12 guides conform):
 1. **Logical Query Processing & Formal Relational Algebra:** Clear pipelines detailing execution order and Codd's 3VL rules.
 2. **High-Fidelity ASCII Visual Mental Models:** Unicode diagrams illustrating window sliding frames, 3VL truth tables, and short-circuit semi-joins.
 3. **MySQL 8.0 InnoDB & Query Planner Internals:** Deep dives into B+ Tree index scans, Hash Joins, `join_buffer_size`, and SARGability.

@@ -74,8 +74,8 @@ jobs:
           node test_edge_cases.js
           node test_stress_challenger.js
 
-      - name: Validate Exercises with Curriculum Harness
-        run: node harness/cli.js test-all-problems
+      - name: Validate Guides and Exercises with Curriculum Harness
+        run: node harness/cli.js validate-all
 
       - name: Build Frontend Application
         run: cd frontend && npm run build
